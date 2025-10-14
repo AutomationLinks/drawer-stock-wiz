@@ -299,8 +299,12 @@ export const DonationForm = () => {
 
               {/* Payment Method Buttons */}
               <div className="space-y-3">
+                <Label className="text-base font-semibold">Choose Payment Method</Label>
                 <Button type="submit" className="w-full" size="lg">
                   Continue with Debit/Credit Card
+                </Button>
+                <Button type="submit" variant="outline" className="w-full" size="lg">
+                  Continue with PayPal
                 </Button>
               </div>
 
