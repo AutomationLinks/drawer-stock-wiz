@@ -105,74 +105,55 @@ export const InventoryDashboard = () => {
     return acc;
   }, {} as Record<string, InventoryItem[]>);
 
-  const totalStock = filteredInventory.reduce((sum, item) => sum + Number(item.stock_on_hand), 0);
-
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 bg-primary text-primary-foreground shadow-lg">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold">The Drawer</h1>
-              <p className="text-primary-foreground/80 mt-1">Inventory Management</p>
-            </div>
-            <div className="flex items-center gap-2 bg-primary-foreground/10 px-4 py-2 rounded-lg">
-              <span className="text-sm font-medium">Total Stock:</span>
-              <span className="text-2xl font-bold">{totalStock.toLocaleString()}</span>
-            </div>
-          </div>
+    <>
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search products by name or category..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
         </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search products by name or category..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <div className="flex gap-2">
-            <ImportInventoryButton onSuccess={fetchInventory} />
-            <Button onClick={() => setIsAddDialogOpen(true)} className="bg-success hover:bg-success/90">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Product
-            </Button>
-            <Button onClick={exportToCSV} variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
-            </Button>
-          </div>
+        <div className="flex gap-2">
+          <ImportInventoryButton onSuccess={fetchInventory} />
+          <Button onClick={() => setIsAddDialogOpen(true)} className="bg-success hover:bg-success/90">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Product
+          </Button>
+          <Button onClick={exportToCSV} variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
         </div>
-
-        <div className="space-y-4">
-          {Object.entries(groupedInventory).map(([category, items]) => (
-            <InventoryCategory
-              key={category}
-              category={category}
-              items={items}
-              onUpdate={fetchInventory}
-            />
-          ))}
-        </div>
-
-        {filteredInventory.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">
-              {searchQuery ? "No items found matching your search." : "No inventory items yet. Add your first product!"}
-            </p>
-          </div>
-        )}
       </div>
+
+      <div className="space-y-4">
+        {Object.entries(groupedInventory).map(([category, items]) => (
+          <InventoryCategory
+            key={category}
+            category={category}
+            items={items}
+            onUpdate={fetchInventory}
+          />
+        ))}
+      </div>
+
+      {filteredInventory.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground text-lg">
+            {searchQuery ? "No items found matching your search." : "No inventory items yet. Add your first product!"}
+          </p>
+        </div>
+      )}
 
       <AddProductDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onSuccess={fetchInventory}
       />
-    </div>
+    </>
   );
 };

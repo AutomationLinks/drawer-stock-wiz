@@ -53,6 +53,47 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_transactions: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          inventory_id: string
+          item_name: string
+          quantity_change: number
+          stock_after: number
+          transaction_type: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          id?: string
+          inventory_id: string
+          item_name: string
+          quantity_change: number
+          stock_after: number
+          transaction_type: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          inventory_id?: string
+          item_name?: string
+          quantity_change?: number
+          stock_after?: number
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transactions_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "inventory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
