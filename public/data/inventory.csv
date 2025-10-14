@@ -1,0 +1,60 @@
+Item Name,Status,Unit,Opening Stock,Stock On Hand,Item Type
+mens socks,Active,pairs,2377.00,338.00,Inventory
+womens socks,Active,pairs,2238.00,576.00,Inventory
+boys socks-small,Active,pairs,726.00,119.00,Inventory
+girls socks-toddler,Active,pairs,381.00,168.00,Inventory
+womens underwear-small,Active,pairs,1702.00,188.00,Inventory
+womens underwear-medium,Active,pairs,755.00,213.00,Inventory
+womens underwear-large,Active,pairs,627.00,730.00,Inventory
+womens underwear-2-3XL,Active,pairs,874.00,364.00,Inventory
+mens underwear-small,Active,pairs,298.00,552.00,Inventory
+mens underwear-medium,Active,pairs,250.00,307.00,Inventory
+mens underwear-large,Active,pairs,445.00,351.00,Inventory
+mens underwear-XL,Active,pairs,732.00,175.00,Inventory
+mens underwear-2XL,Active,pairs,103.00,55.00,Inventory
+boys underwear-toddler,Active,pairs,142.00,140.00,Inventory
+boys underwear-small,Active,pairs,653.00,296.00,Inventory
+boys underwear-medium,Active,pairs,575.00,223.00,Inventory
+boys underwear-large,Active,pairs,191.00,223.00,Inventory
+boys underwear-XL,Active,pairs,367.00,175.00,Inventory
+girls underwear-small,Active,pairs,297.00,618.00,Inventory
+girls underwear-medium,Active,pairs,313.00,1079.00,Inventory
+girls underwear-large,Active,pairs,126.00,727.00,Inventory
+Bombas socks,Active,pairs,14640.00,1658.00,Inventory
+girls underwear-XL,Active,pairs,7.00,144.00,Inventory
+girls underwear-toddler,Active,pairs,91.00,67.00,Inventory
+mens underwear-3XL,Active,pairs,36.00,155.00,Inventory
+mens underwear-4XL/5XL,Active,pairs,4.00,0.00,Inventory
+boys socks-medium,Active,pairs,647.00,511.00,Inventory
+boys socks-large,Active,pairs,432.00,233.00,Inventory
+boys socks-toddler,Active,pairs,60.00,182.00,Inventory
+girls socks-small,Active,pairs,383.00,138.00,Inventory
+womens underwear-XL,Active,pairs,513.00,476.00,Inventory
+girls socks-medium,Active,pairs,645.00,407.00,Inventory
+girls socks-large,Active,pairs,88.00,221.00,Inventory
+womens underwear-4XL-5XL,Active,pairs,50.00,324.00,Inventory
+boys underwear-2XL,Active,pairs,104.00,16.00,Inventory
+mens tees and tanks - small,Active,each,73.00,1240.00,Inventory
+mens tees and tanks - medium,Active,each,21.00,2450.00,Inventory
+mens tees and tanks - large,Active,each,105.00,116.00,Inventory
+mens tees and tanks - XL,Active,each,72.00,0.00,Inventory
+mens tees and tanks - 2XL,Active,each,21.00,1000.00,Inventory
+mens tees and tanks - 3XL,Active,each,4.00,54.00,Inventory
+womens underwear-XS,Active,pairs,,61.00,Inventory
+womens tees and tanks - small,Active,each,,500.00,Inventory
+womens tees and tanks - medium,Active,each,,3150.00,Inventory
+womens tees and tanks - XL,Active,each,,2850.00,Inventory
+Womens Bombas UW - XS/S,Active,pairs,2660.00,4000.00,Inventory
+Womens Bombas UW M/L,Active,pairs,6892.00,14124.00,Inventory
+Womens Bombas UW XL/2XL,Active,pairs,6677.00,15522.00,Inventory
+Mens Bombas UW - XS/S,Active,pairs,4600.00,4693.00,Inventory
+Mens Bombas UW M/L,Active,pairs,7077.00,14875.00,Inventory
+Mens Bombas UW XL/2XL,Active,pairs,7200.00,18706.00,Inventory
+Bombas Toddler socks,Active,pairs,,17404.00,Inventory
+Bombas Junior socks,Active,pairs,,88.00,Inventory
+Bombas Youth socks,Active,pairs,,12028.00,Inventory
+Bombas XS Socks,Active,pairs,500.00,150.00,Inventory
+Bombas S socks,Active,pairs,1000.00,18.00,Inventory
+Bombas M socks,Active,pairs,4550.00,2100.00,Inventory
+Bombas L socks,Active,pairs,1825.00,75.00,Inventory
+Bombas XL socks,Active,pairs,5250.00,3950.00,Inventory
