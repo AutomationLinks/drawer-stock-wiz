@@ -71,7 +71,7 @@ export const DonationForm = () => {
   };
 
   return (
-    <Card className="w-full max-w-lg shadow-lg">
+    <Card className="w-full max-w-2xl shadow-lg">
       <CardHeader className="text-center border-b">
         <div className="flex items-center justify-center mb-2">
           <Heart className="w-8 h-8 text-primary fill-primary" />
@@ -299,12 +299,8 @@ export const DonationForm = () => {
 
               {/* Payment Method Buttons */}
               <div className="space-y-3">
-                <Label className="text-base font-semibold">Choose Payment Method</Label>
                 <Button type="submit" className="w-full" size="lg">
-                  Continue with Stripe
-                </Button>
-                <Button type="submit" variant="outline" className="w-full" size="lg">
-                  Continue with PayPal
+                  Continue with Debit/Credit Card
                 </Button>
               </div>
 
