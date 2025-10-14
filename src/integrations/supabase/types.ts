@@ -94,6 +94,83 @@ export type Database = {
           },
         ]
       }
+      volunteer_events: {
+        Row: {
+          capacity: number
+          created_at: string
+          event_date: string
+          id: string
+          location: string
+          location_address: string
+          slots_filled: number
+          time_slot: string
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          event_date: string
+          id?: string
+          location: string
+          location_address: string
+          slots_filled?: number
+          time_slot: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          event_date?: string
+          id?: string
+          location?: string
+          location_address?: string
+          slots_filled?: number
+          time_slot?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      volunteer_signups: {
+        Row: {
+          comment: string | null
+          created_at: string
+          email: string
+          event_id: string
+          first_name: string
+          id: string
+          last_name: string
+          quantity: number
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          email: string
+          event_id: string
+          first_name: string
+          id?: string
+          last_name: string
+          quantity?: number
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          email?: string
+          event_id?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_signups_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "volunteer_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
