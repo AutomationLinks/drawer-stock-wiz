@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Inventory from "./pages/Inventory";
 import Donate from "./pages/Donate";
 import Signup from "./pages/Signup";
+import EmbedDonate from "./pages/EmbedDonate";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/donate" element={<Donate />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/embed/donate" element={<EmbedDonate />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
