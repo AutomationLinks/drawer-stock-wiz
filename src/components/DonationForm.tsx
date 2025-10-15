@@ -8,17 +8,24 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, ArrowRight, Heart } from "lucide-react";
+
+const formatCurrency = (amount: string | number) => {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
 
 const donationSchema = z.object({
   amount: z.string().min(1, "Please select or enter an amount"),
   customAmount: z.string().optional(),
   coverFee: z.boolean().default(false),
   frequency: z.enum(["one-time", "monthly"]),
+  campaign: z.string().min(1, "Please select a campaign"),
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Phone number is required"),
-  company: z.string().optional(),
+  organization: z.string().optional(),
 });
 
 type DonationFormData = z.infer<typeof donationSchema>;
@@ -39,6 +46,7 @@ export const DonationForm = () => {
       amount: "50",
       frequency: "one-time",
       coverFee: false,
+      campaign: "General",
     },
   });
 
@@ -103,12 +111,12 @@ export const DonationForm = () => {
                         id={`amount-${value}`}
                         className="peer sr-only"
                       />
-                      <Label
+                       <Label
                         htmlFor={`amount-${value}`}
                         className="flex items-center justify-center rounded-lg border-2 border-muted bg-card p-4 hover:bg-accent cursor-pointer peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 transition-all"
                       >
                         <span className="text-lg font-semibold">
-                          {value === "other" ? "Other" : `$${value}`}
+                          {value === "other" ? "Other" : `$${formatCurrency(value)}`}
                         </span>
                       </Label>
                     </div>
@@ -139,6 +147,28 @@ export const DonationForm = () => {
                   </div>
                 </div>
               )}
+
+              {/* Campaign Selection */}
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">Select Campaign</Label>
+                <Select
+                  value={watch("campaign")}
+                  onValueChange={(value) => setValue("campaign", value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a campaign" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="General">General</SelectItem>
+                    <SelectItem value="Drawers of Hope">Drawers of Hope</SelectItem>
+                    <SelectItem value="Dignity in Bulk">Dignity in Bulk</SelectItem>
+                    <SelectItem value="Give to the Max">Give to the Max</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.campaign && (
+                  <p className="text-sm text-destructive">{errors.campaign.message}</p>
+                )}
+              </div>
 
               {/* Frequency Selection */}
               <div className="space-y-3">
@@ -191,7 +221,7 @@ export const DonationForm = () => {
                     htmlFor="coverFee"
                     className="text-sm font-medium cursor-pointer"
                   >
-                    Yes, I'll cover the ${calculateProcessingFee()} processing fee.
+                    Yes, I'll cover the ${formatCurrency(calculateProcessingFee())} processing fee.
                   </Label>
                   <p className="text-xs text-muted-foreground">
                     This ensures 100% of your donation goes to the cause
@@ -204,7 +234,7 @@ export const DonationForm = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Total Amount:</span>
                   <span className="text-2xl font-bold text-primary">
-                    ${getTotalAmount()}
+                    ${formatCurrency(getTotalAmount())}
                   </span>
                 </div>
                 {frequency === "monthly" && (
@@ -265,11 +295,11 @@ export const DonationForm = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="company">Company (Optional)</Label>
+                  <Label htmlFor="organization">Organization (Optional)</Label>
                   <Input
-                    id="company"
+                    id="organization"
                     placeholder="Acme Inc."
-                    {...register("company")}
+                    {...register("organization")}
                   />
                 </div>
               </div>
@@ -279,18 +309,18 @@ export const DonationForm = () => {
                 <div className="flex justify-between text-sm">
                   <span>Donation:</span>
                   <span className="font-medium">
-                    ${amount === "other" ? customAmount : amount}
+                    ${formatCurrency(amount === "other" ? customAmount || "0" : amount)}
                   </span>
                 </div>
                 {coverFee && (
                   <div className="flex justify-between text-sm">
                     <span>Processing Fee:</span>
-                    <span className="font-medium">${calculateProcessingFee()}</span>
+                    <span className="font-medium">${formatCurrency(calculateProcessingFee())}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm border-t border-border pt-2">
                   <span className="font-semibold">Total:</span>
-                  <span className="font-bold text-primary">${getTotalAmount()}</span>
+                  <span className="font-bold text-primary">${formatCurrency(getTotalAmount())}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {frequency === "monthly" ? "Recurring monthly" : "One-time donation"}
