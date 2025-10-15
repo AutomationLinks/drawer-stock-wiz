@@ -1,11 +1,14 @@
 import { Card } from "@/components/ui/card";
 import { VolunteerSchedule } from "@/components/VolunteerSchedule";
 import { VolunteerSignupForm } from "@/components/VolunteerSignupForm";
+import { DonationCounter } from "@/components/DonationCounter";
 
 const EmbedSignup = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
+        <DonationCounter />
+        
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4">

@@ -1,5 +1,6 @@
 import { InventoryDashboard } from "@/components/InventoryDashboard";
 import { AnalyticsSummary } from "@/components/AnalyticsSummary";
+import { DonationCounter } from "@/components/DonationCounter";
 import { Header } from "@/components/Header";
 
 const Inventory = () => {
@@ -8,6 +9,7 @@ const Inventory = () => {
       <Header />
 
       <div className="container mx-auto px-4 py-8">
+        <DonationCounter />
         <AnalyticsSummary />
         <InventoryDashboard />
       </div>

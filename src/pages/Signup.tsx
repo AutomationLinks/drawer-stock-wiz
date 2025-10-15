@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { VolunteerSchedule } from "@/components/VolunteerSchedule";
 import { VolunteerSignupForm } from "@/components/VolunteerSignupForm";
+import { DonationCounter } from "@/components/DonationCounter";
 import { Header } from "@/components/Header";
 
 const Signup = () => {
@@ -8,6 +9,8 @@ const Signup = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 py-8">
+        <DonationCounter />
+        
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4">
