@@ -5,8 +5,19 @@ import { AddProductDialog } from "./AddProductDialog";
 import { ImportInventoryButton } from "./ImportInventoryButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Download } from "lucide-react";
+import { Plus, Search, Download, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface InventoryItem {
   id: string;
@@ -97,6 +108,46 @@ export const InventoryDashboard = () => {
     a.click();
   };
 
+  const restoreToOpeningStock = async () => {
+    try {
+      // Get all items that need to be restored
+      const itemsToRestore = inventory.filter(
+        item => item.stock_on_hand !== item.opening_stock
+      );
+
+      if (itemsToRestore.length === 0) {
+        toast({
+          title: "No changes to restore",
+          description: "All items are already at their opening stock levels",
+        });
+        return;
+      }
+
+      // Update all items to their opening stock
+      const updates = itemsToRestore.map(item =>
+        supabase
+          .from('inventory')
+          .update({ stock_on_hand: item.opening_stock })
+          .eq('id', item.id)
+      );
+
+      await Promise.all(updates);
+
+      toast({
+        title: "Stock restored",
+        description: `Successfully restored ${itemsToRestore.length} items to opening stock levels`,
+      });
+
+      fetchInventory();
+    } catch (error: any) {
+      toast({
+        title: "Error restoring stock",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const groupedInventory = filteredInventory.reduce((acc, item) => {
     if (!acc[item.category]) {
       acc[item.category] = [];
@@ -127,6 +178,32 @@ export const InventoryDashboard = () => {
             <Download className="h-4 w-4 mr-2" />
             Export CSV
           </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="text-orange-600 hover:text-orange-700">
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Restore Stock
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Restore to Opening Stock</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will reset all inventory items back to their original opening stock levels. 
+                  Any changes made since the opening stock was set will be reverted. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={restoreToOpeningStock}
+                  className="bg-orange-600 hover:bg-orange-700"
+                >
+                  Restore
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
