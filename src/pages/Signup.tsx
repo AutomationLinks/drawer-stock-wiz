@@ -32,10 +32,9 @@ const Signup = () => {
             </div>
             
             <div>
-              <h3 className="text-lg font-semibold mb-2">📍 Locations</h3>
+              <h3 className="text-lg font-semibold mb-2">📍 Location</h3>
               <ul className="space-y-2 text-muted-foreground">
                 <li><strong>Burnsville:</strong> 501 Highway 13 East, Suite 575, Burnsville MN 55337</li>
-                <li><strong>Eagan:</strong> 2935 West Service Road, Eagan MN</li>
               </ul>
             </div>
           </div>

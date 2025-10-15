@@ -16,9 +16,13 @@ export const VolunteerSchedule = () => {
   const { data: events, isLoading } = useQuery({
     queryKey: ["volunteer-events"],
     queryFn: async () => {
+      const today = new Date().toISOString().split('T')[0];
+      
       const { data, error } = await supabase
         .from("volunteer_events")
         .select("*")
+        .gte("event_date", today)
+        .neq("location", "Eagan")
         .order("event_date", { ascending: true });
 
       if (error) throw error;
@@ -72,26 +76,29 @@ export const VolunteerSchedule = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
-                    <TableHead>Slots Filled</TableHead>
+                    <TableHead>Spots Remaining</TableHead>
                     <TableHead>Location</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {categoryEvents.map((event) => (
-                    <TableRow key={event.id}>
-                      <TableCell className="font-medium">
-                        {format(new Date(event.event_date), "MM/dd")}
-                      </TableCell>
-                      <TableCell>
-                        {event.slots_filled}/{event.capacity}
-                      </TableCell>
-                      <TableCell>{event.location}</TableCell>
-                      <TableCell>
-                        {getStatusBadge(event.slots_filled, event.capacity)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {categoryEvents.map((event) => {
+                    const remaining = event.capacity - event.slots_filled;
+                    return (
+                      <TableRow key={event.id}>
+                        <TableCell className="font-medium">
+                          {format(new Date(event.event_date), "MM/dd")}
+                        </TableCell>
+                        <TableCell>
+                          {remaining} of {event.capacity} left
+                        </TableCell>
+                        <TableCell>{event.location}</TableCell>
+                        <TableCell>
+                          {getStatusBadge(event.slots_filled, event.capacity)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
