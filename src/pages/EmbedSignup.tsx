@@ -8,16 +8,6 @@ const EmbedSignup = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <DonationCounter />
-        
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-foreground mb-4">
-            Drawer Knob Volunteer Events
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Join us in making a difference! Sign up for upcoming volunteer sessions and help our community.
-          </p>
-        </div>
 
         {/* Event Information */}
         <Card className="mb-8 p-6">
