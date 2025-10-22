@@ -4,24 +4,27 @@ import { Card } from "@/components/ui/card";
 import { Heart } from "lucide-react";
 
 export const DonationCounter = () => {
+  // Historical baseline: Total pairs donated from 2017 until database tracking started
+  const HISTORICAL_DONATIONS = 34218;
+
   const { data: totalDonations, isLoading } = useQuery({
     queryKey: ["total-donations"],
     queryFn: async () => {
-      // Get all removal transactions since 2017 (when the org started)
+      // Get all removal transactions tracked in the database
       const { data, error } = await supabase
         .from("inventory_transactions")
         .select("quantity_change")
-        .eq("transaction_type", "removal")
-        .gte("created_at", "2017-01-01");
+        .eq("transaction_type", "removal");
 
       if (error) throw error;
 
-      // Sum up all the removals (donations)
-      const total = data.reduce((sum, transaction) => {
+      // Sum up all the removals (donations) from database
+      const databaseTotal = data.reduce((sum, transaction) => {
         return sum + Math.abs(Number(transaction.quantity_change));
       }, 0);
 
-      return total;
+      // Add historical baseline to database total
+      return HISTORICAL_DONATIONS + databaseTotal;
     },
     // Refetch every 30 seconds to keep it updated
     refetchInterval: 30000,
