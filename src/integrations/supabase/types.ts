@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      donations: {
+        Row: {
+          amount: number
+          campaign: string
+          created_at: string
+          email: string
+          frequency: string
+          id: string
+          name: string
+          organization: string | null
+          phone: string
+          processing_fee: number | null
+          status: string | null
+          stripe_customer_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_subscription_id: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          campaign: string
+          created_at?: string
+          email: string
+          frequency: string
+          id?: string
+          name: string
+          organization?: string | null
+          phone: string
+          processing_fee?: number | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          campaign?: string
+          created_at?: string
+          email?: string
+          frequency?: string
+          id?: string
+          name?: string
+          organization?: string | null
+          phone?: string
+          processing_fee?: number | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inventory: {
         Row: {
           category: string
@@ -93,6 +150,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      page_views: {
+        Row: {
+          created_at: string
+          id: string
+          page_url: string
+          session_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          page_url: string
+          session_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          page_url?: string
+          session_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
       }
       volunteer_events: {
         Row: {

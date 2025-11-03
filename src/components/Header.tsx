@@ -4,7 +4,7 @@ import logo from "@/assets/goodwish-logo-horizontal.png";
 export const Header = () => {
   return (
     <header className="bg-background border-b">
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link to="/" className="inline-block">
           <img 
             src={logo} 
@@ -12,6 +12,13 @@ export const Header = () => {
             className="h-16 w-auto"
           />
         </Link>
+        <nav className="flex gap-6">
+          <Link to="/inventory" className="text-foreground hover:text-primary transition-colors">Inventory</Link>
+          <Link to="/donate" className="text-foreground hover:text-primary transition-colors">Donate</Link>
+          <Link to="/signup" className="text-foreground hover:text-primary transition-colors">Volunteer</Link>
+          <Link to="/counter" className="text-foreground hover:text-primary transition-colors">Counter</Link>
+          <Link to="/analytics" className="text-foreground hover:text-primary transition-colors">Analytics</Link>
+        </nav>
       </div>
     </header>
   );

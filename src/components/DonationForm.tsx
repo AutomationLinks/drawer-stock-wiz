@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +11,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, ArrowRight, Heart } from "lucide-react";
+import { ArrowLeft, ArrowRight, Heart, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const formatCurrency = (amount: string | number) => {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -30,15 +34,85 @@ const donationSchema = z.object({
 
 type DonationFormData = z.infer<typeof donationSchema>;
 
+// Initialize Stripe with publishable key
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+
+// Payment Form Component
+const PaymentForm = ({ 
+  clientSecret, 
+  onSuccess 
+}: { 
+  clientSecret: string; 
+  onSuccess: () => void;
+}) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setIsProcessing(true);
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/donate?success=true`,
+      },
+      redirect: 'if_required',
+    });
+
+    if (error) {
+      toast({
+        title: "Payment Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      setIsProcessing(false);
+    } else {
+      toast({
+        title: "Thank You!",
+        description: "Your donation has been processed successfully.",
+      });
+      onSuccess();
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <PaymentElement />
+      <Button type="submit" disabled={!stripe || isProcessing} className="w-full">
+        {isProcessing ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          'Complete Donation'
+        )}
+      </Button>
+    </form>
+  );
+};
+
 export const DonationForm = () => {
   const [step, setStep] = useState(1);
   const [selectedAmount, setSelectedAmount] = useState<string>("50");
+  const [clientSecret, setClientSecret] = useState<string>("");
+  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
+  const { toast } = useToast();
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm<DonationFormData>({
     resolver: zodResolver(donationSchema),
@@ -66,9 +140,49 @@ export const DonationForm = () => {
     return (baseAmount + fee).toFixed(2);
   };
 
-  const onSubmit = (data: DonationFormData) => {
-    console.log("Donation data:", data);
-    // Here you would integrate with Stripe/PayPal
+  const onSubmit = async (data: DonationFormData) => {
+    setIsCreatingPayment(true);
+    
+    try {
+      const actualAmount = amount === "other" ? parseFloat(customAmount || "0") : parseFloat(amount);
+      const totalAmount = parseFloat(getTotalAmount());
+      const processingFee = coverFee ? parseFloat(calculateProcessingFee()) : 0;
+
+      // Call edge function to create payment intent
+      const { data: paymentData, error } = await supabase.functions.invoke('create-payment-intent', {
+        body: {
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          organization: data.organization,
+          amount: actualAmount,
+          processingFee: processingFee,
+          totalAmount: totalAmount,
+          frequency: data.frequency,
+          campaign: data.campaign,
+        },
+      });
+
+      if (error) throw error;
+
+      setClientSecret(paymentData.clientSecret);
+      setStep(3); // Move to payment step
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create payment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingPayment(false);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    reset();
+    setStep(1);
+    setSelectedAmount("50");
+    setClientSecret("");
   };
 
   const handleNext = () => {
@@ -91,7 +205,7 @@ export const DonationForm = () => {
       </CardHeader>
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit(onSubmit)}>
-          {step === 1 ? (
+          {step === 1 && (
             <div className="space-y-6">
               {/* Amount Selection */}
               <div className="space-y-3">
@@ -252,7 +366,9 @@ export const DonationForm = () => {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
-          ) : (
+          )}
+          
+          {step === 2 && (
             <div className="space-y-6">
               {/* Personal Information */}
               <div className="space-y-4">
@@ -327,16 +443,21 @@ export const DonationForm = () => {
                 </p>
               </div>
 
-              {/* Payment Method Buttons */}
-              <div className="space-y-3">
-                <Label className="text-base font-semibold">Choose Payment Method</Label>
-                <Button type="submit" className="w-full" size="lg">
-                  Continue with Debit/Credit Card
-                </Button>
-                <Button type="submit" variant="outline" className="w-full" size="lg">
-                  Continue with PayPal
-                </Button>
-              </div>
+              <Button 
+                type="submit" 
+                size="lg" 
+                className="w-full"
+                disabled={isCreatingPayment}
+              >
+                {isCreatingPayment ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating Payment...
+                  </>
+                ) : (
+                  'Proceed to Payment'
+                )}
+              </Button>
 
               <Button
                 type="button"
@@ -348,6 +469,37 @@ export const DonationForm = () => {
                 Back to donation details
               </Button>
             </div>
+          )}
+
+          {/* Step 3: Payment */}
+          {step === 3 && clientSecret && (
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h3 className="text-2xl font-semibold mb-2">Complete Your Payment</h3>
+                  <p className="text-muted-foreground">
+                    Enter your payment details to complete your {frequency === "monthly" ? "monthly" : "one-time"} donation of ${getTotalAmount()}
+                  </p>
+                </div>
+                
+                <PaymentForm 
+                  clientSecret={clientSecret}
+                  onSuccess={handlePaymentSuccess}
+                />
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setStep(2);
+                    setClientSecret("");
+                  }}
+                  className="w-full"
+                >
+                  Back to Information
+                </Button>
+              </div>
+            </Elements>
           )}
         </form>
       </CardContent>

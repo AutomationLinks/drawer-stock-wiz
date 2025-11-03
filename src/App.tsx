@@ -7,13 +7,35 @@ import Inventory from "./pages/Inventory";
 import Donate from "./pages/Donate";
 import Signup from "./pages/Signup";
 import Counter from "./pages/Counter";
+import Analytics from "./pages/Analytics";
 import EmbedDonate from "./pages/EmbedDonate";
 import EmbedInventory from "./pages/EmbedInventory";
 import EmbedSignup from "./pages/EmbedSignup";
 import EmbedCounter from "./pages/EmbedCounter";
 import NotFound from "./pages/NotFound";
+import { usePageTracking } from "./hooks/usePageTracking";
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  usePageTracking();
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to="/inventory" replace />} />
+      <Route path="/inventory" element={<Inventory />} />
+      <Route path="/donate" element={<Donate />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/counter" element={<Counter />} />
+      <Route path="/analytics" element={<Analytics />} />
+      <Route path="/embed/donate" element={<EmbedDonate />} />
+      <Route path="/embed/inventory" element={<EmbedInventory />} />
+      <Route path="/embed/signup" element={<EmbedSignup />} />
+      <Route path="/embed/counter" element={<EmbedCounter />} />
+      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -21,19 +43,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/inventory" replace />} />
-          <Route path="/inventory" element={<Inventory />} />
-          <Route path="/donate" element={<Donate />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/counter" element={<Counter />} />
-          <Route path="/embed/donate" element={<EmbedDonate />} />
-          <Route path="/embed/inventory" element={<EmbedInventory />} />
-          <Route path="/embed/signup" element={<EmbedSignup />} />
-          <Route path="/embed/counter" element={<EmbedCounter />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AppContent />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
