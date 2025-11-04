@@ -4,10 +4,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { CustomerDialog } from "./CustomerDialog";
 
 interface CreateSalesOrderDialogProps {
@@ -32,6 +34,7 @@ interface OrderItem {
 export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: CreateSalesOrderDialogProps) => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState("");
+  const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
   const [orderDate, setOrderDate] = useState(new Date().toISOString().split("T")[0]);
   const [paymentTerms, setPaymentTerms] = useState("Due on Receipt");
   const [items, setItems] = useState<OrderItem[]>([{ item_name: "", quantity_ordered: 0, item_price: 0 }]);
@@ -146,18 +149,49 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
               <div className="space-y-2">
                 <Label>Customer</Label>
                 <div className="flex gap-2">
-                  <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select customer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customers.map(customer => (
-                        <SelectItem key={customer.id} value={customer.id}>
-                          {customer.customer_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={customerSearchOpen}
+                        className="flex-1 justify-between"
+                      >
+                        {selectedCustomer
+                          ? customers.find((customer) => customer.id === selectedCustomer)?.customer_name
+                          : "Select customer..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[400px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Search customers..." />
+                        <CommandList>
+                          <CommandEmpty>No customer found.</CommandEmpty>
+                          <CommandGroup>
+                            {customers.map((customer) => (
+                              <CommandItem
+                                key={customer.id}
+                                value={customer.customer_name}
+                                onSelect={() => {
+                                  setSelectedCustomer(customer.id);
+                                  setCustomerSearchOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedCustomer === customer.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {customer.customer_name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <Button
                     variant="outline"
                     onClick={() => setIsCustomerDialogOpen(true)}
