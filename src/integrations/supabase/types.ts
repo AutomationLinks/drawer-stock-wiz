@@ -480,6 +480,66 @@ export type Database = {
         }
         Relationships: []
       }
+      partners: {
+        Row: {
+          active: boolean | null
+          address_line_1: string | null
+          address_line_2: string | null
+          city: string | null
+          contact_name: string | null
+          country: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+          notes: string | null
+          phone: string | null
+          postal_code: string
+          state: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          address_line_1?: string | null
+          address_line_2?: string | null
+          city?: string | null
+          contact_name?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          postal_code: string
+          state?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          address_line_1?: string | null
+          address_line_2?: string | null
+          city?: string | null
+          contact_name?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string
+          state?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       sales_order_items: {
         Row: {
           account: string | null

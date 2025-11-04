@@ -20,6 +20,7 @@ export const Header = () => {
           <Link to="/companies" className="text-foreground hover:text-primary transition-colors">Companies</Link>
           <Link to="/sales-orders" className="text-foreground hover:text-primary transition-colors">Sales Orders</Link>
           <Link to="/invoices" className="text-foreground hover:text-primary transition-colors">Invoices</Link>
+          <Link to="/partner-locations" className="text-foreground hover:text-primary transition-colors">Partners</Link>
         </nav>
       </div>
     </header>
