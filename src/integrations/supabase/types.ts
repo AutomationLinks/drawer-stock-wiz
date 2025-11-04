@@ -101,66 +101,165 @@ export type Database = {
       donations: {
         Row: {
           address: string | null
+          address_line_1: string | null
+          address_line_2: string | null
+          alternate_email: string | null
+          alternate_phone: string | null
           amount: number
           campaign: string
+          city: string | null
+          comments: string | null
+          country: string | null
           coupon_code: string | null
           created_at: string
           email: string
+          first_name: string | null
+          first_transaction_date: string | null
+          fiscal_ytd_gift_total: number | null
+          formal_name: string | null
           frequency: string
           id: string
+          is_organization: boolean | null
           is_test_mode: boolean | null
+          join_date: string | null
+          largest_gift_amount: number | null
+          largest_gift_date: string | null
+          last_fiscal_year_gift_total: number | null
+          last_gift_amount: number | null
+          last_gift_date: string | null
+          last_name: string | null
+          last_year_gift_total: number | null
+          lifetime_contribution_total: number | null
+          lifetime_gift_total: number | null
+          lifetime_non_cash_gift_total: number | null
+          lifetime_soft_credit_total: number | null
+          mobile_phone: string | null
           name: string
+          number_of_gifts: number | null
           organization: string | null
           phone: string
+          postal_code: string | null
+          preferred_name: string | null
           processing_fee: number | null
+          spouse_name: string | null
+          state: string | null
           status: string | null
           stripe_customer_id: string | null
           stripe_payment_intent_id: string | null
           stripe_subscription_id: string | null
           total_amount: number
+          total_pledge_balance: number | null
           updated_at: string
+          work_phone: string | null
+          ytd_gift_total: number | null
         }
         Insert: {
           address?: string | null
+          address_line_1?: string | null
+          address_line_2?: string | null
+          alternate_email?: string | null
+          alternate_phone?: string | null
           amount: number
           campaign: string
+          city?: string | null
+          comments?: string | null
+          country?: string | null
           coupon_code?: string | null
           created_at?: string
           email: string
+          first_name?: string | null
+          first_transaction_date?: string | null
+          fiscal_ytd_gift_total?: number | null
+          formal_name?: string | null
           frequency: string
           id?: string
+          is_organization?: boolean | null
           is_test_mode?: boolean | null
+          join_date?: string | null
+          largest_gift_amount?: number | null
+          largest_gift_date?: string | null
+          last_fiscal_year_gift_total?: number | null
+          last_gift_amount?: number | null
+          last_gift_date?: string | null
+          last_name?: string | null
+          last_year_gift_total?: number | null
+          lifetime_contribution_total?: number | null
+          lifetime_gift_total?: number | null
+          lifetime_non_cash_gift_total?: number | null
+          lifetime_soft_credit_total?: number | null
+          mobile_phone?: string | null
           name: string
+          number_of_gifts?: number | null
           organization?: string | null
           phone: string
+          postal_code?: string | null
+          preferred_name?: string | null
           processing_fee?: number | null
+          spouse_name?: string | null
+          state?: string | null
           status?: string | null
           stripe_customer_id?: string | null
           stripe_payment_intent_id?: string | null
           stripe_subscription_id?: string | null
           total_amount: number
+          total_pledge_balance?: number | null
           updated_at?: string
+          work_phone?: string | null
+          ytd_gift_total?: number | null
         }
         Update: {
           address?: string | null
+          address_line_1?: string | null
+          address_line_2?: string | null
+          alternate_email?: string | null
+          alternate_phone?: string | null
           amount?: number
           campaign?: string
+          city?: string | null
+          comments?: string | null
+          country?: string | null
           coupon_code?: string | null
           created_at?: string
           email?: string
+          first_name?: string | null
+          first_transaction_date?: string | null
+          fiscal_ytd_gift_total?: number | null
+          formal_name?: string | null
           frequency?: string
           id?: string
+          is_organization?: boolean | null
           is_test_mode?: boolean | null
+          join_date?: string | null
+          largest_gift_amount?: number | null
+          largest_gift_date?: string | null
+          last_fiscal_year_gift_total?: number | null
+          last_gift_amount?: number | null
+          last_gift_date?: string | null
+          last_name?: string | null
+          last_year_gift_total?: number | null
+          lifetime_contribution_total?: number | null
+          lifetime_gift_total?: number | null
+          lifetime_non_cash_gift_total?: number | null
+          lifetime_soft_credit_total?: number | null
+          mobile_phone?: string | null
           name?: string
+          number_of_gifts?: number | null
           organization?: string | null
           phone?: string
+          postal_code?: string | null
+          preferred_name?: string | null
           processing_fee?: number | null
+          spouse_name?: string | null
+          state?: string | null
           status?: string | null
           stripe_customer_id?: string | null
           stripe_payment_intent_id?: string | null
           stripe_subscription_id?: string | null
           total_amount?: number
+          total_pledge_balance?: number | null
           updated_at?: string
+          work_phone?: string | null
+          ytd_gift_total?: number | null
         }
         Relationships: []
       }

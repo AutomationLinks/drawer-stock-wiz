@@ -20,16 +20,16 @@ export const ImportDonorsDialog = ({ open, onOpenChange }: ImportDonorsDialogPro
 
   const downloadTemplate = () => {
     const csvContent = [
-      'Name,Email,Phone,Address,Organization,Amount,Frequency,Campaign,Coupon Code,Date',
-      'John Doe,john@example.com,555-123-4567,"123 Main St, City, ST 12345",Acme Inc,100,one-time,General,,2024-01-15',
-      'Jane Smith,jane@example.com,555-987-6543,"456 Oak Ave, Town, ST 67890",,50,monthly,"Drawers of Hope",SAVE10,2024-01-20'
+      'First Name/Org Name,Last Name,Formal Name,Preferred Name,Organization?,Phone,Mobile Phone,Alternate Phone,Work Phone,Email,Alternate Email,Spouse Name,Comments,Organization,Lifetime Contribution Total,Lifetime Non Cash Gift Total,Lifetime Soft Credit Total,YTD Gift Total,Fiscal YTD Gift Total,Last Year Gift Total,Last Fiscal Year Gift Total,First Transaction Date,Last Gift Amount,Last Gift Date,Largest Gift Amount,Largest Gift Date,Number of Gifts,Lifetime Gift Total,Total Pledge Balance,Join Date,Address Line 1,Address Line 2,City,State,Postal Code,Country,Campaign,Frequency,Coupon Code',
+      'John,Smith,Mr. John Smith,John,No,555-0100,555-0101,555-0102,555-0103,john@example.com,jsmith@example.com,Mary Smith,VIP donor,Acme Corp,5000,500,0,1200,1000,800,750,2020-01-15,250,2024-03-20,500,2023-12-25,20,5000,0,2020-01-15,123 Main St,Apt 4B,Springfield,IL,62701,USA,General,one-time,',
+      'Acme Corporation,,Acme Corp,Acme,Yes,555-0200,,,555-0201,info@acme.com,donations@acme.com,,Corporate sponsor,Acme Corporation,50000,0,0,12000,10000,8000,7500,2019-06-01,2000,2024-03-15,5000,2023-11-30,24,50000,5000,2019-06-01,456 Business Blvd,,Tech City,CA,94000,USA,Corporate Giving,monthly,'
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'donor-import-template.csv';
+    a.download = 'comprehensive-donor-import-template.csv';
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -134,10 +134,12 @@ export const ImportDonorsDialog = ({ open, onOpenChange }: ImportDonorsDialogPro
           </div>
 
           <div className="text-xs text-muted-foreground space-y-1">
-            <p><strong>Required columns:</strong> Name, Email, Phone, Amount, Frequency, Campaign</p>
-            <p><strong>Optional columns:</strong> Address, Organization, Coupon Code, Date</p>
-            <p><strong>Frequency values:</strong> "one-time" or "monthly"</p>
-            <p><strong>Note:</strong> Duplicates (same email + date) will be skipped</p>
+            <p><strong>Core Fields:</strong> First Name/Org Name, Email</p>
+            <p><strong>Contact:</strong> Phone, Mobile Phone, Work Phone, Alternate Phone, Alternate Email</p>
+            <p><strong>Address:</strong> Address Line 1, Address Line 2, City, State, Postal Code, Country</p>
+            <p><strong>Financial:</strong> Last Gift Amount, Lifetime Contribution Total, Number of Gifts</p>
+            <p><strong>Smart Import:</strong> System auto-detects organizations, consolidates phone/email, merges duplicates by email</p>
+            <p><strong>Profile Consolidation:</strong> Existing donors (matched by email) will be updated with new information</p>
           </div>
         </div>
       </DialogContent>
