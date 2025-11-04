@@ -5,16 +5,16 @@ import { Heart } from "lucide-react";
 
 export const DonationCounter = () => {
   // Historical baseline: Total pairs donated from 2017 until database tracking started
-  const HISTORICAL_DONATIONS = 34218;
+  const HISTORICAL_DONATIONS = 6656779;
 
   const { data: totalDonations, isLoading } = useQuery({
     queryKey: ["total-donations"],
     queryFn: async () => {
-      // Get all removal transactions tracked in the database
+      // Get all removal and sales order transactions tracked in the database
       const { data, error } = await supabase
         .from("inventory_transactions")
         .select("quantity_change")
-        .eq("transaction_type", "removal");
+        .in("transaction_type", ["removal", "sales_order"]);
 
       if (error) throw error;
 
