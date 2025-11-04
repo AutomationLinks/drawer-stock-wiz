@@ -71,9 +71,6 @@ export const DonationCounter = () => {
           <p className="text-4xl font-bold text-primary">
             {(totalDonations || 0).toLocaleString()}
           </p>
-          <p className="text-lg text-muted-foreground font-medium mt-2">
-            Estimated Value: ${(totalValue || 0).toLocaleString()}
-          </p>
         </div>
       </div>
     </Card>
