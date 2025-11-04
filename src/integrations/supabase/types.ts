@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      customers: {
+        Row: {
+          billing_address: string | null
+          created_at: string
+          customer_id: string
+          customer_name: string
+          email: string | null
+          id: string
+          phone: string | null
+          shipping_address: string | null
+          updated_at: string
+        }
+        Insert: {
+          billing_address?: string | null
+          created_at?: string
+          customer_id: string
+          customer_name: string
+          email?: string | null
+          id?: string
+          phone?: string | null
+          shipping_address?: string | null
+          updated_at?: string
+        }
+        Update: {
+          billing_address?: string | null
+          created_at?: string
+          customer_id?: string
+          customer_name?: string
+          email?: string | null
+          id?: string
+          phone?: string | null
+          shipping_address?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       donations: {
         Row: {
           amount: number
@@ -174,6 +210,191 @@ export type Database = {
           user_agent?: string | null
         }
         Relationships: []
+      }
+      sales_order_items: {
+        Row: {
+          account: string | null
+          created_at: string
+          discount: number
+          discount_amount: number
+          id: string
+          inventory_id: string | null
+          item_description: string | null
+          item_name: string
+          item_price: number
+          item_total: number
+          product_id: string | null
+          quantity_cancelled: number
+          quantity_fulfilled: number
+          quantity_invoiced: number
+          quantity_ordered: number
+          quantity_packed: number
+          sales_order_id: string
+          sku: string | null
+          updated_at: string
+          usage_unit: string
+        }
+        Insert: {
+          account?: string | null
+          created_at?: string
+          discount?: number
+          discount_amount?: number
+          id?: string
+          inventory_id?: string | null
+          item_description?: string | null
+          item_name: string
+          item_price?: number
+          item_total?: number
+          product_id?: string | null
+          quantity_cancelled?: number
+          quantity_fulfilled?: number
+          quantity_invoiced?: number
+          quantity_ordered?: number
+          quantity_packed?: number
+          sales_order_id: string
+          sku?: string | null
+          updated_at?: string
+          usage_unit?: string
+        }
+        Update: {
+          account?: string | null
+          created_at?: string
+          discount?: number
+          discount_amount?: number
+          id?: string
+          inventory_id?: string | null
+          item_description?: string | null
+          item_name?: string
+          item_price?: number
+          item_total?: number
+          product_id?: string | null
+          quantity_cancelled?: number
+          quantity_fulfilled?: number
+          quantity_invoiced?: number
+          quantity_ordered?: number
+          quantity_packed?: number
+          sales_order_id?: string
+          sku?: string | null
+          updated_at?: string
+          usage_unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_order_items_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_order_items_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_orders: {
+        Row: {
+          adjustment: number
+          adjustment_description: string | null
+          created_at: string
+          currency_code: string
+          customer_id: string
+          discount_type: string
+          entity_discount_amount: number
+          entity_discount_percent: number
+          exchange_rate: number
+          expected_shipment_date: string | null
+          id: string
+          invoice_status: string
+          is_discount_before_tax: boolean
+          notes: string | null
+          order_date: string
+          order_status: string
+          payment_status: string
+          payment_terms: string | null
+          payment_terms_label: string | null
+          sales_channel: string | null
+          sales_order_number: string
+          shipment_status: string
+          shipping_charge: number
+          source: string | null
+          subtotal: number
+          template_name: string | null
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          adjustment?: number
+          adjustment_description?: string | null
+          created_at?: string
+          currency_code?: string
+          customer_id: string
+          discount_type?: string
+          entity_discount_amount?: number
+          entity_discount_percent?: number
+          exchange_rate?: number
+          expected_shipment_date?: string | null
+          id?: string
+          invoice_status?: string
+          is_discount_before_tax?: boolean
+          notes?: string | null
+          order_date: string
+          order_status?: string
+          payment_status?: string
+          payment_terms?: string | null
+          payment_terms_label?: string | null
+          sales_channel?: string | null
+          sales_order_number: string
+          shipment_status?: string
+          shipping_charge?: number
+          source?: string | null
+          subtotal?: number
+          template_name?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          adjustment?: number
+          adjustment_description?: string | null
+          created_at?: string
+          currency_code?: string
+          customer_id?: string
+          discount_type?: string
+          entity_discount_amount?: number
+          entity_discount_percent?: number
+          exchange_rate?: number
+          expected_shipment_date?: string | null
+          id?: string
+          invoice_status?: string
+          is_discount_before_tax?: boolean
+          notes?: string | null
+          order_date?: string
+          order_status?: string
+          payment_status?: string
+          payment_terms?: string | null
+          payment_terms_label?: string | null
+          sales_channel?: string | null
+          sales_order_number?: string
+          shipment_status?: string
+          shipping_charge?: number
+          source?: string | null
+          subtotal?: number
+          template_name?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       volunteer_events: {
         Row: {
