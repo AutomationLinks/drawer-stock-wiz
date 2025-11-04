@@ -9,6 +9,7 @@ import Signup from "./pages/Signup";
 import Counter from "./pages/Counter";
 import Analytics from "./pages/Analytics";
 import SalesOrders from "./pages/SalesOrders";
+import Invoices from "./pages/Invoices";
 import EmbedDonate from "./pages/EmbedDonate";
 import EmbedInventory from "./pages/EmbedInventory";
 import EmbedSignup from "./pages/EmbedSignup";
@@ -29,6 +30,7 @@ const AppContent = () => {
       <Route path="/counter" element={<Counter />} />
       <Route path="/analytics" element={<Analytics />} />
       <Route path="/sales-orders" element={<SalesOrders />} />
+      <Route path="/invoices" element={<Invoices />} />
       <Route path="/embed/donate" element={<EmbedDonate />} />
       <Route path="/embed/inventory" element={<EmbedInventory />} />
       <Route path="/embed/signup" element={<EmbedSignup />} />
