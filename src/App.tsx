@@ -8,6 +8,7 @@ import Donate from "./pages/Donate";
 import Signup from "./pages/Signup";
 import Counter from "./pages/Counter";
 import Analytics from "./pages/Analytics";
+import Companies from "./pages/Companies";
 import SalesOrders from "./pages/SalesOrders";
 import Invoices from "./pages/Invoices";
 import EmbedDonate from "./pages/EmbedDonate";
@@ -29,6 +30,7 @@ const AppContent = () => {
       <Route path="/signup" element={<Signup />} />
       <Route path="/counter" element={<Counter />} />
       <Route path="/analytics" element={<Analytics />} />
+      <Route path="/companies" element={<Companies />} />
       <Route path="/sales-orders" element={<SalesOrders />} />
       <Route path="/invoices" element={<Invoices />} />
       <Route path="/embed/donate" element={<EmbedDonate />} />

@@ -16,8 +16,8 @@ export const Header = () => {
           <Link to="/inventory" className="text-foreground hover:text-primary transition-colors">Inventory</Link>
           <Link to="/donate" className="text-foreground hover:text-primary transition-colors">Donate</Link>
           <Link to="/signup" className="text-foreground hover:text-primary transition-colors">Volunteer</Link>
-          <Link to="/counter" className="text-foreground hover:text-primary transition-colors">Counter</Link>
           <Link to="/analytics" className="text-foreground hover:text-primary transition-colors">Analytics</Link>
+          <Link to="/companies" className="text-foreground hover:text-primary transition-colors">Companies</Link>
           <Link to="/sales-orders" className="text-foreground hover:text-primary transition-colors">Sales Orders</Link>
           <Link to="/invoices" className="text-foreground hover:text-primary transition-colors">Invoices</Link>
         </nav>

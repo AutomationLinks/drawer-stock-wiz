@@ -20,8 +20,11 @@ export type Database = {
           created_at: string
           customer_id: string
           customer_name: string
+          customer_sub_type: string | null
           email: string | null
+          first_name: string | null
           id: string
+          last_name: string | null
           phone: string | null
           shipping_address: string | null
           updated_at: string
@@ -31,8 +34,11 @@ export type Database = {
           created_at?: string
           customer_id: string
           customer_name: string
+          customer_sub_type?: string | null
           email?: string | null
+          first_name?: string | null
           id?: string
+          last_name?: string | null
           phone?: string | null
           shipping_address?: string | null
           updated_at?: string
@@ -42,8 +48,11 @@ export type Database = {
           created_at?: string
           customer_id?: string
           customer_name?: string
+          customer_sub_type?: string | null
           email?: string | null
+          first_name?: string | null
           id?: string
+          last_name?: string | null
           phone?: string | null
           shipping_address?: string | null
           updated_at?: string
