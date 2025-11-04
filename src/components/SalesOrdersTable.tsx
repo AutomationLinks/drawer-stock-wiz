@@ -8,6 +8,7 @@ import { Plus, Search, Eye, Download } from "lucide-react";
 import { format } from "date-fns";
 import { CreateSalesOrderDialog } from "./CreateSalesOrderDialog";
 import { SalesOrderDetailDialog } from "./SalesOrderDetailDialog";
+import { ImportSalesOrdersButton } from "./ImportSalesOrdersButton";
 import { useToast } from "@/hooks/use-toast";
 
 interface SalesOrder {
@@ -116,6 +117,7 @@ export const SalesOrdersTable = () => {
           />
         </div>
         <div className="flex gap-2">
+          <ImportSalesOrdersButton onSuccess={fetchOrders} />
           <Button onClick={exportToCSV} variant="outline">
             <Download className="mr-2 h-4 w-4" />
             Export CSV
