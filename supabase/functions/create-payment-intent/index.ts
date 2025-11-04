@@ -21,12 +21,15 @@ serve(async (req) => {
       name, 
       email, 
       phone, 
-      organization, 
+      organization,
+      address,
       amount, 
       processingFee, 
       totalAmount, 
       frequency, 
-      campaign 
+      campaign,
+      couponCode,
+      isTestMode
     } = await req.json();
 
     console.log('Processing payment:', { name, email, amount, frequency, campaign });
@@ -76,8 +79,11 @@ serve(async (req) => {
           name,
           phone,
           organization: organization || '',
+          address: address || '',
           campaign,
           processingFee: processingFee.toString(),
+          couponCode: couponCode || '',
+          isTestMode: isTestMode ? 'true' : 'false',
         },
       });
 
@@ -105,8 +111,11 @@ serve(async (req) => {
           email,
           phone,
           organization: organization || '',
+          address: address || '',
           campaign,
           processingFee: processingFee.toString(),
+          couponCode: couponCode || '',
+          isTestMode: isTestMode ? 'true' : 'false',
         },
         description: `Donation to ${campaign}`,
       });

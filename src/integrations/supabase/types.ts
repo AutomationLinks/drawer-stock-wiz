@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      coupons: {
+        Row: {
+          active: boolean | null
+          code: string
+          created_at: string
+          current_uses: number | null
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          max_uses: number | null
+          min_amount: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          code: string
+          created_at?: string
+          current_uses?: number | null
+          discount_type: string
+          discount_value: number
+          expires_at?: string | null
+          id?: string
+          max_uses?: number | null
+          min_amount?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          code?: string
+          created_at?: string
+          current_uses?: number | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          max_uses?: number | null
+          min_amount?: number | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           billing_address: string | null
@@ -61,12 +100,15 @@ export type Database = {
       }
       donations: {
         Row: {
+          address: string | null
           amount: number
           campaign: string
+          coupon_code: string | null
           created_at: string
           email: string
           frequency: string
           id: string
+          is_test_mode: boolean | null
           name: string
           organization: string | null
           phone: string
@@ -79,12 +121,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          address?: string | null
           amount: number
           campaign: string
+          coupon_code?: string | null
           created_at?: string
           email: string
           frequency: string
           id?: string
+          is_test_mode?: boolean | null
           name: string
           organization?: string | null
           phone: string
@@ -97,12 +142,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          address?: string | null
           amount?: number
           campaign?: string
+          coupon_code?: string | null
           created_at?: string
           email?: string
           frequency?: string
           id?: string
+          is_test_mode?: boolean | null
           name?: string
           organization?: string | null
           phone?: string

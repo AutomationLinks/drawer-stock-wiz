@@ -30,6 +30,8 @@ const donationSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Phone number is required"),
   organization: z.string().optional(),
+  address: z.string().optional(),
+  couponCode: z.string().optional(),
 });
 
 type DonationFormData = z.infer<typeof donationSchema>;
@@ -105,7 +107,13 @@ export const DonationForm = () => {
   const [selectedAmount, setSelectedAmount] = useState<string>("50");
   const [clientSecret, setClientSecret] = useState<string>("");
   const [isCreatingPayment, setIsCreatingPayment] = useState(false);
+  const [couponDiscount, setCouponDiscount] = useState<number>(0);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
   const { toast } = useToast();
+
+  // Detect test mode from URL parameter
+  const searchParams = new URLSearchParams(window.location.search);
+  const isTestMode = searchParams.get('test') === 'true';
 
   const {
     register,
@@ -140,6 +148,49 @@ export const DonationForm = () => {
     return (baseAmount + fee).toFixed(2);
   };
 
+  const validateCoupon = async () => {
+    const couponCode = watch("couponCode");
+    if (!couponCode) {
+      toast({
+        title: "Error",
+        description: "Please enter a coupon code",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setValidatingCoupon(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-coupon', {
+        body: { code: couponCode },
+      });
+
+      if (error) throw error;
+
+      if (data.valid) {
+        setCouponDiscount(data.discount_value);
+        toast({
+          title: "Coupon Applied!",
+          description: `${data.discount_type === 'percentage' ? data.discount_value + '% off' : '$' + data.discount_value + ' off'}`,
+        });
+      } else {
+        toast({
+          title: "Invalid Coupon",
+          description: "This coupon code is not valid or has expired.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to validate coupon",
+        variant: "destructive",
+      });
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
   const onSubmit = async (data: DonationFormData) => {
     setIsCreatingPayment(true);
     
@@ -155,11 +206,14 @@ export const DonationForm = () => {
           email: data.email,
           phone: data.phone,
           organization: data.organization,
+          address: data.address,
           amount: actualAmount,
           processingFee: processingFee,
           totalAmount: totalAmount,
           frequency: data.frequency,
           campaign: data.campaign,
+          couponCode: data.couponCode,
+          isTestMode: isTestMode,
         },
       });
 
@@ -202,6 +256,16 @@ export const DonationForm = () => {
         <CardDescription>
           Your support makes a difference
         </CardDescription>
+        {isTestMode && (
+          <div className="mt-4 p-3 bg-yellow-100 border border-yellow-400 rounded-lg">
+            <p className="text-sm font-semibold text-yellow-800">
+              🧪 TEST MODE ACTIVE
+            </p>
+            <p className="text-xs text-yellow-700">
+              This donation will be marked as a test transaction
+            </p>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -417,6 +481,39 @@ export const DonationForm = () => {
                     placeholder="Acme Inc."
                     {...register("organization")}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address (Optional)</Label>
+                  <Input
+                    id="address"
+                    placeholder="123 Main St, City, ST 12345"
+                    {...register("address")}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="couponCode">Coupon Code (Optional)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="couponCode"
+                      placeholder="Enter code"
+                      {...register("couponCode")}
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={validateCoupon}
+                      disabled={validatingCoupon}
+                    >
+                      {validatingCoupon ? "Validating..." : "Apply"}
+                    </Button>
+                  </div>
+                  {couponDiscount > 0 && (
+                    <p className="text-sm text-green-600">
+                      ✓ Discount applied!
+                    </p>
+                  )}
                 </div>
               </div>
 
