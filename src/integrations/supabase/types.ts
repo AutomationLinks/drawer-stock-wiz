@@ -491,6 +491,7 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
+          is_out_of_state: boolean | null
           latitude: number | null
           longitude: number | null
           name: string
@@ -498,6 +499,7 @@ export type Database = {
           phone: string | null
           postal_code: string
           state: string | null
+          status: string | null
           updated_at: string | null
         }
         Insert: {
@@ -510,6 +512,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          is_out_of_state?: boolean | null
           latitude?: number | null
           longitude?: number | null
           name: string
@@ -517,6 +520,7 @@ export type Database = {
           phone?: string | null
           postal_code: string
           state?: string | null
+          status?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -529,6 +533,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          is_out_of_state?: boolean | null
           latitude?: number | null
           longitude?: number | null
           name?: string
@@ -536,6 +541,7 @@ export type Database = {
           phone?: string | null
           postal_code?: string
           state?: string | null
+          status?: string | null
           updated_at?: string | null
         }
         Relationships: []

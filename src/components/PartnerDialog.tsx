@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Partner {
   id?: string;
@@ -20,6 +21,8 @@ interface Partner {
   state?: string;
   postal_code: string;
   country?: string;
+  status?: string;
+  is_out_of_state?: boolean;
   latitude?: number;
   longitude?: number;
   notes?: string;
@@ -48,6 +51,8 @@ export const PartnerDialog = ({ open, onOpenChange, partner }: PartnerDialogProp
       state: "",
       postal_code: "",
       country: "USA",
+      status: "Active",
+      is_out_of_state: false,
       notes: "",
     },
   });
@@ -245,6 +250,45 @@ export const PartnerDialog = ({ open, onOpenChange, partner }: PartnerDialogProp
                     <Input {...field} placeholder="USA" />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status *</FormLabel>
+                  <FormControl>
+                    <select
+                      {...field}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                      <option value="Pending">Pending</option>
+                    </select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="is_out_of_state"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Out of State Partner</FormLabel>
+                  </div>
                 </FormItem>
               )}
             />

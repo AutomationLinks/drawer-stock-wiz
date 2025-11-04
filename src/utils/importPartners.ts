@@ -12,6 +12,8 @@ interface PartnerRow {
   state?: string;
   postal_code: string;
   country?: string;
+  status?: string;
+  is_out_of_state?: boolean;
   latitude?: number;
   longitude?: number;
   notes?: string;
@@ -42,14 +44,14 @@ export const importPartners = async (
     onProgress?.(i + 1, rows.length);
 
     // Validate required columns
-    const validationError = validateRequiredColumns(row, ["Name", "Postal Code"]);
+    const validationError = validateRequiredColumns(row, ["partner_name", "zip"]);
     if (validationError) {
       results.errors.push(`Row ${i + 1}: ${validationError}`);
       continue;
     }
 
-    const name = row["Name"]?.trim();
-    const postalCode = row["Postal Code"]?.trim();
+    const name = row["partner_name"]?.trim();
+    const postalCode = row["zip"]?.trim();
 
     // Check for duplicates
     const duplicateKey = `${name.toLowerCase()}-${postalCode}`;
@@ -61,15 +63,17 @@ export const importPartners = async (
     const partnerData: PartnerRow = {
       name,
       postal_code: postalCode,
-      contact_name: row["Contact Name"]?.trim() || null,
-      email: row["Email"]?.trim() || null,
-      phone: row["Phone"]?.trim() || null,
-      address_line_1: row["Address Line 1"]?.trim() || null,
-      address_line_2: row["Address Line 2"]?.trim() || null,
-      city: row["City"]?.trim() || null,
-      state: row["State"]?.trim() || null,
-      country: row["Country"]?.trim() || "USA",
-      notes: row["Notes"]?.trim() || null,
+      contact_name: row["contact_name"]?.trim() || null,
+      email: row["email"]?.trim() || null,
+      phone: row["phone"]?.trim() || null,
+      address_line_1: row["street"]?.trim() || null,
+      address_line_2: row["address_line_2"]?.trim() || null,
+      city: row["city"]?.trim() || null,
+      state: row["state"]?.trim() || null,
+      country: row["country"]?.trim() || "USA",
+      status: row["status"]?.trim() || "Active",
+      is_out_of_state: row["is_out_of_state"]?.toLowerCase() === "true" || row["is_out_of_state"] === "1",
+      notes: row["notes"]?.trim() || null,
     };
 
     // Parse latitude/longitude if provided
@@ -94,9 +98,10 @@ export const importPartners = async (
 };
 
 export const downloadPartnerTemplate = () => {
-  const template = `Name,Contact Name,Email,Phone,Address Line 1,Address Line 2,City,State,Postal Code,Country,Latitude,Longitude,Notes
-Downtown Community Center,Jane Smith,jane@downtown.org,555-0100,123 Main Street,Suite 200,Springfield,IL,62701,USA,39.7817,-89.6501,Primary distribution site
-Westside Food Bank,John Doe,john@westside.org,555-0200,456 West Ave,,Chicago,IL,60601,USA,41.8781,-87.6298,Monthly pickups`;
+  const template = `partner_name,street,city,state,zip,country,status,is_out_of_state
+Downtown Community Center,123 Main Street,Springfield,IL,62701,USA,Active,false
+Westside Food Bank,456 West Ave,Chicago,IL,60601,USA,Active,false
+Out of State Partner,789 Oak Drive,Los Angeles,CA,90001,USA,Active,true`;
 
   const blob = new Blob([template], { type: "text/csv" });
   const url = window.URL.createObjectURL(blob);

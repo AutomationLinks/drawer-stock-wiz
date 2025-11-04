@@ -28,12 +28,12 @@ export const PartnerMap = ({ partners, selectedPartnerId, onMarkerClick }: Partn
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<Map<string, mapboxgl.Marker>>(new Map());
-  const [mapboxToken, setMapboxToken] = useState("");
-  const [showTokenInput, setShowTokenInput] = useState(true);
+  const MAPBOX_TOKEN = "pk.eyJ1IjoiYXV0b21hdGlvbmxpbmtzIiwiYSI6ImNtaDNvd241cDA5NmUya3E1bWcxMWl3NHcifQ.cZvSmiJEocnSxN6uomeAfg";
+  const [mapboxToken, setMapboxToken] = useState(MAPBOX_TOKEN);
+  const [showTokenInput, setShowTokenInput] = useState(false);
 
   useEffect(() => {
-    // Check for token in localStorage first
-    const savedToken = localStorage.getItem("mapbox_token");
+    const savedToken = localStorage.getItem("mapbox_token") || MAPBOX_TOKEN;
     if (savedToken) {
       setMapboxToken(savedToken);
       setShowTokenInput(false);

@@ -28,6 +28,8 @@ interface Partner {
   city?: string;
   state?: string;
   postal_code: string;
+  status?: string;
+  is_out_of_state?: boolean;
   latitude?: number;
   longitude?: number;
 }
@@ -55,6 +57,8 @@ export const PartnersTable = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [partnerToDelete, setPartnerToDelete] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [showOutOfStateOnly, setShowOutOfStateOnly] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -67,8 +71,12 @@ export const PartnersTable = ({
       partner.postal_code.includes(searchTerm);
 
     const matchesZip = !zipFilter || partner.postal_code.startsWith(zipFilter);
+    
+    const matchesStatus = statusFilter === "all" || partner.status === statusFilter;
+    
+    const matchesOutOfState = !showOutOfStateOnly || partner.is_out_of_state === true;
 
-    return matchesSearch && matchesZip;
+    return matchesSearch && matchesZip && matchesStatus && matchesOutOfState;
   });
 
   const handleEdit = (partner: Partner) => {
@@ -113,8 +121,8 @@ export const PartnersTable = ({
   return (
     <>
       <div className="space-y-4">
-        <div className="flex gap-4">
-          <div className="relative flex-1">
+        <div className="flex gap-4 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by name, city, state, or zip..."
@@ -150,6 +158,28 @@ export const PartnersTable = ({
               </Button>
             )}
           </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <option value="all">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+            <option value="Pending">Pending</option>
+          </select>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="out-of-state"
+              checked={showOutOfStateOnly}
+              onChange={(e) => setShowOutOfStateOnly(e.target.checked)}
+              className="h-4 w-4 rounded border-primary"
+            />
+            <label htmlFor="out-of-state" className="text-sm font-medium">
+              Out of State Only
+            </label>
+          </div>
         </div>
 
         <div className="rounded-md border">
@@ -161,6 +191,8 @@ export const PartnersTable = ({
                 <TableHead>City</TableHead>
                 <TableHead>State</TableHead>
                 <TableHead>Zip Code</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Out of State</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -168,7 +200,7 @@ export const PartnersTable = ({
             <TableBody>
               {filteredPartners.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     No partners found
                   </TableCell>
                 </TableRow>
@@ -186,6 +218,8 @@ export const PartnersTable = ({
                     <TableCell>{partner.city || "-"}</TableCell>
                     <TableCell>{partner.state || "-"}</TableCell>
                     <TableCell>{partner.postal_code}</TableCell>
+                    <TableCell>{partner.status || "Active"}</TableCell>
+                    <TableCell>{partner.is_out_of_state ? "Yes" : "No"}</TableCell>
                     <TableCell>{partner.phone || "-"}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
