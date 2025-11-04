@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from "recharts";
 import { Search, Download, DollarSign, Users, TrendingUp, Calendar } from "lucide-react";
 import { format } from "date-fns";
+import { SalesOrderAnalytics } from "@/components/SalesOrderAnalytics";
+import { InvoiceAnalytics } from "@/components/InvoiceAnalytics";
+import { InventoryAnalytics } from "@/components/InventoryAnalytics";
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
 
@@ -204,6 +207,9 @@ const Analytics = () => {
         <Tabs defaultValue="donations" className="space-y-4">
           <TabsList>
             <TabsTrigger value="donations">Donations</TabsTrigger>
+            <TabsTrigger value="sales-orders">Sales Orders</TabsTrigger>
+            <TabsTrigger value="invoices">Invoices</TabsTrigger>
+            <TabsTrigger value="inventory">Inventory</TabsTrigger>
             <TabsTrigger value="traffic">Website Traffic</TabsTrigger>
             <TabsTrigger value="donors">Donor Management</TabsTrigger>
           </TabsList>
@@ -310,6 +316,21 @@ const Analytics = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Sales Orders Tab */}
+          <TabsContent value="sales-orders" className="space-y-4">
+            <SalesOrderAnalytics />
+          </TabsContent>
+
+          {/* Invoices Tab */}
+          <TabsContent value="invoices" className="space-y-4">
+            <InvoiceAnalytics />
+          </TabsContent>
+
+          {/* Inventory Tab */}
+          <TabsContent value="inventory" className="space-y-4">
+            <InventoryAnalytics />
           </TabsContent>
 
           {/* Traffic Tab */}

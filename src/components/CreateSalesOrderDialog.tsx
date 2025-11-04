@@ -98,6 +98,9 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
         payment_terms: paymentTerms,
         subtotal: total,
         total: total,
+        order_status: 'closed',
+        payment_status: 'paid',
+        shipment_status: 'fulfilled',
       })
       .select()
       .single();

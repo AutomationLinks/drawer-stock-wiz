@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { InvoicesTable } from "@/components/InvoicesTable";
 import { CreateInvoiceDialog } from "@/components/CreateInvoiceDialog";
+import { ImportInvoicesButton } from "@/components/ImportInvoicesButton";
 
 const Invoices = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -19,10 +20,13 @@ const Invoices = () => {
               Create and manage invoices for inventory distribution
             </p>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Invoice
-          </Button>
+          <div className="flex gap-2">
+            <ImportInvoicesButton />
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Invoice
+            </Button>
+          </div>
         </div>
 
         <InvoicesTable />
