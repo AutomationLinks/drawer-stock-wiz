@@ -2,12 +2,18 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Package, DollarSign, TrendingUp, FileText } from "lucide-react";
+import { Package, DollarSign, TrendingUp, FileText, CalendarIcon } from "lucide-react";
 import { format, subDays, startOfMonth } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export const SalesReportingDashboard = () => {
   const [period, setPeriod] = useState("30");
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
   const [stats, setStats] = useState({
     totalOrders: 0,
     totalRevenue: 0,
@@ -18,15 +24,21 @@ export const SalesReportingDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [period]);
+  }, [period, startDate, endDate]);
 
   const fetchDashboardData = async () => {
-    const startDate = getStartDate();
+    const dateRange = getDateRange();
     
-    const { data: orders } = await supabase
+    let query = supabase
       .from("sales_orders")
       .select("*")
-      .gte("order_date", startDate);
+      .gte("order_date", dateRange.start);
+    
+    if (dateRange.end) {
+      query = query.lte("order_date", dateRange.end);
+    }
+    
+    const { data: orders } = await query;
 
     if (orders) {
       const totalOrders = orders.length;
@@ -60,14 +72,21 @@ export const SalesReportingDashboard = () => {
     }
   };
 
-  const getStartDate = () => {
+  const getDateRange = () => {
+    if (period === "custom" && startDate) {
+      return {
+        start: format(startDate, "yyyy-MM-dd"),
+        end: endDate ? format(endDate, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd")
+      };
+    }
+    
     const today = new Date();
     switch (period) {
-      case "7": return format(subDays(today, 7), "yyyy-MM-dd");
-      case "14": return format(subDays(today, 14), "yyyy-MM-dd");
-      case "30": return format(subDays(today, 30), "yyyy-MM-dd");
-      case "mtd": return format(startOfMonth(today), "yyyy-MM-dd");
-      default: return format(subDays(today, 30), "yyyy-MM-dd");
+      case "7": return { start: format(subDays(today, 7), "yyyy-MM-dd"), end: format(today, "yyyy-MM-dd") };
+      case "14": return { start: format(subDays(today, 14), "yyyy-MM-dd"), end: format(today, "yyyy-MM-dd") };
+      case "30": return { start: format(subDays(today, 30), "yyyy-MM-dd"), end: format(today, "yyyy-MM-dd") };
+      case "mtd": return { start: format(startOfMonth(today), "yyyy-MM-dd"), end: format(today, "yyyy-MM-dd") };
+      default: return { start: format(subDays(today, 30), "yyyy-MM-dd"), end: format(today, "yyyy-MM-dd") };
     }
   };
 
@@ -77,17 +96,79 @@ export const SalesReportingDashboard = () => {
     <div className="space-y-6 mb-8">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Sales Overview</h2>
-        <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7">Last 7 Days</SelectItem>
-            <SelectItem value="14">Last 14 Days</SelectItem>
-            <SelectItem value="30">Last 30 Days</SelectItem>
-            <SelectItem value="mtd">Month to Date</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2 items-center">
+          <Select value={period} onValueChange={(value) => {
+            setPeriod(value);
+            if (value !== "custom") {
+              setStartDate(undefined);
+              setEndDate(undefined);
+            }
+          }}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7">Last 7 Days</SelectItem>
+              <SelectItem value="14">Last 14 Days</SelectItem>
+              <SelectItem value="30">Last 30 Days</SelectItem>
+              <SelectItem value="mtd">Month to Date</SelectItem>
+              <SelectItem value="custom">Custom Range</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {period === "custom" && (
+            <div className="flex gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[150px] justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "MMM dd, yyyy") : "Start date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[150px] justify-start text-left font-normal",
+                      !endDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "MMM dd, yyyy") : "End date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    disabled={(date) => startDate ? date < startDate : false}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
