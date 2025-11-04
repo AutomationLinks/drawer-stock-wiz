@@ -25,6 +25,7 @@ interface InventoryItem {
   opening_stock: number;
   stock_on_hand: number;
   item_type: string;
+  price_per_unit?: number;
 }
 
 interface InventoryRowProps {
@@ -109,10 +110,16 @@ export const InventoryRow = ({ item, isEven, onUpdate }: InventoryRowProps) => {
     }
   };
 
+  const pricePerUnit = item.price_per_unit || 2.00;
+  const totalValue = Number(item.stock_on_hand) * pricePerUnit;
+
   return (
     <tr className={isEven ? "bg-card" : "bg-muted/30"}>
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="text-sm font-medium text-foreground">{item.item_name}</div>
+        <div className="text-xs text-muted-foreground">
+          ${pricePerUnit.toFixed(2)} per {item.unit} • Value: ${totalValue.toLocaleString()}
+        </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="text-sm text-muted-foreground">{item.unit}</div>

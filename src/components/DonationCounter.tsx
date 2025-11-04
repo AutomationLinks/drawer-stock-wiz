@@ -5,7 +5,8 @@ import { Heart } from "lucide-react";
 
 export const DonationCounter = () => {
   // Historical baseline: Total pairs donated from 2017 until database tracking started
-  const HISTORICAL_DONATIONS = 6656779;
+  // Calculation: 656,779 (current real total) - 622,376 (historical imports to add) = 34,403
+  const HISTORICAL_DONATIONS = 34403;
 
   const { data: totalDonations, isLoading } = useQuery({
     queryKey: ["total-donations"],
@@ -30,6 +31,25 @@ export const DonationCounter = () => {
     refetchInterval: 30000,
   });
 
+  const { data: totalValue } = useQuery({
+    queryKey: ["total-donation-value"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory_transactions")
+        .select("total_value")
+        .in("transaction_type", ["removal", "sales_order"]);
+
+      if (error) throw error;
+
+      const value = data.reduce((sum, transaction) => {
+        return sum + Math.abs(Number(transaction.total_value || 0));
+      }, 0);
+
+      return value;
+    },
+    refetchInterval: 30000,
+  });
+
   if (isLoading) {
     return (
       <Card className="p-6 mb-6 bg-gradient-to-r from-primary/10 to-pink-500/10 border-primary/20">
@@ -51,6 +71,9 @@ export const DonationCounter = () => {
           <p className="text-sm text-muted-foreground font-medium">Pairs Donated Since 2017</p>
           <p className="text-4xl font-bold text-primary">
             {(totalDonations || 0).toLocaleString()}
+          </p>
+          <p className="text-lg text-muted-foreground font-medium mt-2">
+            Estimated Value: ${(totalValue || 0).toLocaleString()}
           </p>
         </div>
       </div>

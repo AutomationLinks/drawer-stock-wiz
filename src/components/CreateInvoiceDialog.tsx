@@ -23,6 +23,8 @@ interface InvoiceItem {
   item_name: string;
   quantity: number;
   stock_on_hand: number;
+  price: number;
+  total: number;
 }
 
 export const CreateInvoiceDialog = ({ open, onOpenChange, onSuccess }: CreateInvoiceDialogProps) => {
@@ -82,6 +84,9 @@ export const CreateInvoiceDialog = ({ open, onOpenChange, onSuccess }: CreateInv
       return;
     }
 
+    const price = inventoryItem.price_per_unit || 2.00;
+    const total = quantity * price;
+
     setItems([
       ...items,
       {
@@ -89,6 +94,8 @@ export const CreateInvoiceDialog = ({ open, onOpenChange, onSuccess }: CreateInv
         item_name: inventoryItem.item_name,
         quantity,
         stock_on_hand: inventoryItem.stock_on_hand,
+        price: price,
+        total: total,
       },
     ]);
 
@@ -136,8 +143,8 @@ export const CreateInvoiceDialog = ({ open, onOpenChange, onSuccess }: CreateInv
         inventory_id: item.inventory_id,
         item_name: item.item_name,
         quantity: item.quantity,
-        price: 0,
-        total: 0,
+        price: item.price,
+        total: item.total,
       }));
 
       const { error: itemsError } = await supabase
@@ -281,8 +288,8 @@ export const CreateInvoiceDialog = ({ open, onOpenChange, onSuccess }: CreateInv
                         <TableCell>{item.item_name}</TableCell>
                         <TableCell className="text-right">{item.quantity}</TableCell>
                         <TableCell className="text-right">{item.stock_on_hand}</TableCell>
-                        <TableCell className="text-right">$0.00</TableCell>
-                        <TableCell className="text-right">$0.00</TableCell>
+                        <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">${item.total.toFixed(2)}</TableCell>
                         <TableCell className="text-right">
                           <Button
                             variant="ghost"
@@ -298,7 +305,9 @@ export const CreateInvoiceDialog = ({ open, onOpenChange, onSuccess }: CreateInv
                       <TableCell colSpan={4} className="text-right font-semibold">
                         Total:
                       </TableCell>
-                      <TableCell className="text-right font-semibold">$0.00</TableCell>
+                      <TableCell className="text-right font-semibold">
+                        ${items.reduce((sum, item) => sum + item.total, 0).toFixed(2)}
+                      </TableCell>
                       <TableCell></TableCell>
                     </TableRow>
                   </TableBody>

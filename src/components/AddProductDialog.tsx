@@ -25,8 +25,18 @@ export const AddProductDialog = ({ open, onOpenChange, onSuccess }: AddProductDi
   const [unit, setUnit] = useState("pairs");
   const [openingStock, setOpeningStock] = useState("0");
   const [stockOnHand, setStockOnHand] = useState("0");
+  const [price, setPrice] = useState(2.00);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  // Auto-set price based on category or item name
+  useState(() => {
+    if (category.toLowerCase().includes('bombas') || itemName.toLowerCase().includes('bombas')) {
+      setPrice(10.00);
+    } else {
+      setPrice(2.00);
+    }
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +51,8 @@ export const AddProductDialog = ({ open, onOpenChange, onSuccess }: AddProductDi
         opening_stock: parseFloat(openingStock),
         stock_on_hand: parseFloat(stockOnHand),
         status: 'Active',
-        item_type: 'Inventory'
+        item_type: 'Inventory',
+        price_per_unit: price
       });
 
     setIsSubmitting(false);
@@ -63,6 +74,7 @@ export const AddProductDialog = ({ open, onOpenChange, onSuccess }: AddProductDi
       setUnit("pairs");
       setOpeningStock("0");
       setStockOnHand("0");
+      setPrice(2.00);
       onOpenChange(false);
       onSuccess();
     }
@@ -130,6 +142,21 @@ export const AddProductDialog = ({ open, onOpenChange, onSuccess }: AddProductDi
                 step="1"
                 required
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="price">Price Per Unit *</Label>
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                value={price}
+                onChange={(e) => setPrice(parseFloat(e.target.value) || 2.00)}
+                min="0"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Default: $2.00 for normal items, $10.00 for Bombas items
+              </p>
             </div>
           </div>
           <DialogFooter>

@@ -271,6 +271,7 @@ export type Database = {
           item_name: string
           item_type: string | null
           opening_stock: number | null
+          price_per_unit: number | null
           status: string | null
           stock_on_hand: number
           unit: string | null
@@ -283,6 +284,7 @@ export type Database = {
           item_name: string
           item_type?: string | null
           opening_stock?: number | null
+          price_per_unit?: number | null
           status?: string | null
           stock_on_hand?: number
           unit?: string | null
@@ -295,6 +297,7 @@ export type Database = {
           item_name?: string
           item_type?: string | null
           opening_stock?: number | null
+          price_per_unit?: number | null
           status?: string | null
           stock_on_hand?: number
           unit?: string | null
@@ -311,7 +314,9 @@ export type Database = {
           item_name: string
           quantity_change: number
           stock_after: number
+          total_value: number | null
           transaction_type: string
+          value_per_unit: number | null
         }
         Insert: {
           category: string
@@ -321,7 +326,9 @@ export type Database = {
           item_name: string
           quantity_change: number
           stock_after: number
+          total_value?: number | null
           transaction_type: string
+          value_per_unit?: number | null
         }
         Update: {
           category?: string
@@ -331,7 +338,9 @@ export type Database = {
           item_name?: string
           quantity_change?: number
           stock_after?: number
+          total_value?: number | null
           transaction_type?: string
+          value_per_unit?: number | null
         }
         Relationships: [
           {

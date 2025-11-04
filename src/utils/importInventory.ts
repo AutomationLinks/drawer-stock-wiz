@@ -31,6 +31,19 @@ const categorizeItem = (itemName: string): string => {
   return "Other";
 };
 
+const determinePricing = (itemName: string, category: string): number => {
+  const name = itemName.toLowerCase();
+  const cat = category.toLowerCase();
+  
+  // Bombas items are $10
+  if (cat.includes('bombas') || name.includes('bombas')) {
+    return 10.00;
+  }
+  
+  // Everything else is $2
+  return 2.00;
+};
+
 export const importInventoryFromCSV = async () => {
   try {
     const response = await fetch('/data/inventory.csv');
@@ -50,15 +63,19 @@ export const importInventoryFromCSV = async () => {
       return item;
     });
 
-    const inventoryItems = items.map((item: CSVRow) => ({
-      item_name: item["Item Name"],
-      category: categorizeItem(item["Item Name"]),
-      status: item.Status,
-      unit: item.Unit,
-      opening_stock: parseFloat(item["Opening Stock"]) || 0,
-      stock_on_hand: parseFloat(item["Stock On Hand"]) || 0,
-      item_type: item["Item Type"],
-    }));
+    const inventoryItems = items.map((item: CSVRow) => {
+      const category = categorizeItem(item["Item Name"]);
+      return {
+        item_name: item["Item Name"],
+        category: category,
+        status: item.Status,
+        unit: item.Unit,
+        opening_stock: parseFloat(item["Opening Stock"]) || 0,
+        stock_on_hand: parseFloat(item["Stock On Hand"]) || 0,
+        item_type: item["Item Type"],
+        price_per_unit: determinePricing(item["Item Name"], category),
+      };
+    });
 
     const { error } = await supabase
       .from('inventory')

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { FileText, Package, TrendingUp, CheckCircle } from "lucide-react";
+import { FileText, Package, TrendingUp, CheckCircle, DollarSign } from "lucide-react";
 import { format } from "date-fns";
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
@@ -33,6 +33,9 @@ export const InvoiceAnalytics = () => {
     return sum + items;
   }, 0);
   const avgItemsPerInvoice = totalInvoices > 0 ? totalItems / totalInvoices : 0;
+  
+  const totalValue = invoices.reduce((sum, inv) => sum + Number(inv.total || 0), 0);
+  const avgInvoiceValue = totalInvoices > 0 ? totalValue / totalInvoices : 0;
 
   // Invoices by status
   const statusData = [
@@ -79,7 +82,7 @@ export const InvoiceAnalytics = () => {
   return (
     <div className="space-y-4">
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
@@ -121,6 +124,28 @@ export const InvoiceAnalytics = () => {
           <CardContent>
             <div className="text-2xl font-bold">{fulfillmentRate.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">{fulfilledInvoices} fulfilled</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalValue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Items distributed</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Invoice Value</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${avgInvoiceValue.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">Per invoice</p>
           </CardContent>
         </Card>
       </div>

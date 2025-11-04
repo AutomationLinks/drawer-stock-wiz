@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Package, AlertCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, Package, AlertCircle, DollarSign } from "lucide-react";
 
 interface CategoryStats {
   category: string;
@@ -20,6 +21,21 @@ export const AnalyticsSummary = () => {
     current_total: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+
+  const { data: inventoryValue } = useQuery({
+    queryKey: ["inventory-value"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory")
+        .select("stock_on_hand, price_per_unit");
+      
+      if (error) throw error;
+      
+      return data.reduce((sum, item) => {
+        return sum + (Number(item.stock_on_hand) * Number(item.price_per_unit || 2));
+      }, 0);
+    },
+  });
 
   useEffect(() => {
     fetchAnalytics();
@@ -128,13 +144,21 @@ export const AnalyticsSummary = () => {
           <AlertCircle className="h-5 w-5 text-muted-foreground" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
           <div className="bg-card p-4 rounded-lg border border-border">
             <div className="flex items-center gap-2 mb-2">
               <Package className="h-5 w-5 text-primary" />
               <span className="text-sm font-medium text-muted-foreground">Current Stock</span>
             </div>
             <p className="text-3xl font-bold text-foreground">{totalStats.current_total.toLocaleString()}</p>
+          </div>
+
+          <div className="bg-card p-4 rounded-lg border border-border">
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign className="h-5 w-5 text-primary" />
+              <span className="text-sm font-medium text-muted-foreground">Inventory Value</span>
+            </div>
+            <p className="text-3xl font-bold text-foreground">${(inventoryValue || 0).toLocaleString()}</p>
           </div>
 
           <div className="bg-card p-4 rounded-lg border border-border">
