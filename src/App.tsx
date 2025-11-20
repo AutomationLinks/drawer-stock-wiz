@@ -17,6 +17,8 @@ import EmbedDonate from "./pages/EmbedDonate";
 import EmbedInventory from "./pages/EmbedInventory";
 import EmbedSignup from "./pages/EmbedSignup";
 import EmbedCounter from "./pages/EmbedCounter";
+import EmbedPartners from "./pages/EmbedPartners";
+import EmbedManager from "./pages/EmbedManager";
 import DonorInformation from "./pages/DonorInformation";
 import NotFound from "./pages/NotFound";
 import { usePageTracking } from "./hooks/usePageTracking";
@@ -42,6 +44,8 @@ const AppContent = () => {
       <Route path="/embed/inventory" element={<EmbedInventory />} />
       <Route path="/embed/signup" element={<EmbedSignup />} />
       <Route path="/embed/counter" element={<EmbedCounter />} />
+      <Route path="/embed/partners" element={<EmbedPartners />} />
+      <Route path="/embed-manager" element={<EmbedManager />} />
       <Route path="/donor-information" element={<DonorInformation />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
