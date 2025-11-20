@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PartnerMap } from "@/components/PartnerMap";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Search, MapPin, Phone, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, MapPin } from "lucide-react";
+
+const INITIAL_DISPLAY_COUNT = 9;
+const PARTNERS_PER_PAGE = 3;
 
 interface Partner {
   id: string;
@@ -20,6 +24,12 @@ interface Partner {
 const EmbedPartners = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>();
+  const [displayCount, setDisplayCount] = useState(INITIAL_DISPLAY_COUNT);
+
+  // Reset display count when search term changes
+  useEffect(() => {
+    setDisplayCount(INITIAL_DISPLAY_COUNT);
+  }, [searchTerm]);
 
   const { data: partners = [] } = useQuery({
     queryKey: ["partners"],
@@ -46,9 +56,41 @@ const EmbedPartners = () => {
     );
   });
 
+  const displayedPartners = searchTerm 
+    ? filteredPartners 
+    : filteredPartners.slice(0, displayCount);
+
+  const hasMore = !searchTerm && displayCount < filteredPartners.length;
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Search Section */}
+        <div className="space-y-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-center">
+            Find a Distribution Partner Near You
+          </h1>
+          <div className="relative max-w-2xl mx-auto">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, city, state, or zip code..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-12 h-12 text-base"
+            />
+          </div>
+          {!searchTerm && (
+            <p className="text-center text-sm text-muted-foreground">
+              Showing {displayedPartners.length} of {filteredPartners.length} partners
+            </p>
+          )}
+          {searchTerm && (
+            <p className="text-center text-sm text-muted-foreground">
+              Found {filteredPartners.length} partner{filteredPartners.length !== 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
+
         {/* Map Section */}
         <div className="rounded-lg overflow-hidden shadow-lg">
           <PartnerMap
@@ -59,20 +101,10 @@ const EmbedPartners = () => {
           />
         </div>
 
-        {/* Search and Partners List */}
+        {/* Partners List */}
         <div className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search partners by name, city, state, or zip..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredPartners.map((partner) => (
+            {displayedPartners.map((partner) => (
               <Card
                 key={partner.id}
                 className={`p-4 cursor-pointer transition-all hover:shadow-md ${
@@ -102,6 +134,20 @@ const EmbedPartners = () => {
           {filteredPartners.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               No partners found matching your search.
+            </div>
+          )}
+
+          {hasMore && (
+            <div className="flex justify-center pt-4">
+              <Button
+                onClick={() => setDisplayCount(prev => prev + PARTNERS_PER_PAGE)}
+                variant="outline"
+                size="lg"
+                className="gap-2"
+              >
+                <MapPin className="h-4 w-4" />
+                Show {Math.min(PARTNERS_PER_PAGE, filteredPartners.length - displayCount)} More Partner{Math.min(PARTNERS_PER_PAGE, filteredPartners.length - displayCount) !== 1 ? 's' : ''}
+              </Button>
             </div>
           )}
         </div>
