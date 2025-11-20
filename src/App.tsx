@@ -12,6 +12,7 @@ import Companies from "./pages/Companies";
 import SalesOrders from "./pages/SalesOrders";
 import Invoices from "./pages/Invoices";
 import PartnerLocations from "./pages/PartnerLocations";
+import TrainingVideos from "./pages/TrainingVideos";
 import EmbedDonate from "./pages/EmbedDonate";
 import EmbedInventory from "./pages/EmbedInventory";
 import EmbedSignup from "./pages/EmbedSignup";
@@ -36,6 +37,7 @@ const AppContent = () => {
       <Route path="/sales-orders" element={<SalesOrders />} />
       <Route path="/invoices" element={<Invoices />} />
       <Route path="/partner-locations" element={<PartnerLocations />} />
+      <Route path="/training-videos" element={<TrainingVideos />} />
       <Route path="/embed/donate" element={<EmbedDonate />} />
       <Route path="/embed/inventory" element={<EmbedInventory />} />
       <Route path="/embed/signup" element={<EmbedSignup />} />

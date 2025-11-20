@@ -731,6 +731,42 @@ export type Database = {
           },
         ]
       }
+      training_videos: {
+        Row: {
+          active: boolean | null
+          category: string
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          title: string
+          updated_at: string | null
+          vimeo_url: string
+        }
+        Insert: {
+          active?: boolean | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          title: string
+          updated_at?: string | null
+          vimeo_url: string
+        }
+        Update: {
+          active?: boolean | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          title?: string
+          updated_at?: string | null
+          vimeo_url?: string
+        }
+        Relationships: []
+      }
       volunteer_events: {
         Row: {
           capacity: number
