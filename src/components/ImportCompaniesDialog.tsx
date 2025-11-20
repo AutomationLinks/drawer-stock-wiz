@@ -25,9 +25,9 @@ export const ImportCompaniesDialog = ({ open, onOpenChange, onSuccess }: ImportC
   const [skipDuplicates, setSkipDuplicates] = useState(false);
 
   const downloadTemplate = () => {
-    const template = `Company Name,Email ,Street Address,City,State,Zip Code,Notes
-180 Degrees St Cloud,info@example.org,1101 Washington Memorial Dr,Saint Cloud,MN,56301,None
-360 Communities,info@example.org,501 Hwy 13 E #112,Burnsville,MN,55337,Partner organization`;
+    const template = `Company Name,Email ,Street Address,City,State,Zip Code,Notes,Orders,Invoices
+180 Degrees St Cloud,info@example.org,1101 Washington Memorial Dr,Saint Cloud,MN,56301,None,2,2
+360 Communities,info@example.org,501 Hwy 13 E #112,Burnsville,MN,55337,Partner organization,12,13`;
     
     const blob = new Blob([template], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
