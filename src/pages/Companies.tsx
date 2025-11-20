@@ -21,6 +21,10 @@ interface Company {
   email?: string;
   phone?: string;
   customer_sub_type?: string;
+  address_line_1?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
   ordersCount?: number;
   invoicesCount?: number;
 }

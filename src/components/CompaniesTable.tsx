@@ -25,6 +25,10 @@ interface Company {
   email?: string;
   phone?: string;
   customer_sub_type?: string;
+  address_line_1?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
   ordersCount?: number;
   invoicesCount?: number;
 }
@@ -87,11 +91,10 @@ export const CompaniesTable = ({ companies, onEdit, onView, onRefresh }: Compani
           <TableHeader>
             <TableRow>
               <TableHead>Company Name</TableHead>
-              <TableHead>Contact ID</TableHead>
-              <TableHead>Contact Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Phone</TableHead>
+              <TableHead>Address</TableHead>
+              <TableHead>City</TableHead>
+              <TableHead>State</TableHead>
+              <TableHead>Zip Code</TableHead>
               <TableHead className="text-center">Orders</TableHead>
               <TableHead className="text-center">Invoices</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -100,7 +103,7 @@ export const CompaniesTable = ({ companies, onEdit, onView, onRefresh }: Compani
           <TableBody>
             {companies.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   No companies found
                 </TableCell>
               </TableRow>
@@ -108,17 +111,10 @@ export const CompaniesTable = ({ companies, onEdit, onView, onRefresh }: Compani
               companies.map((company) => (
                 <TableRow key={company.id}>
                   <TableCell className="font-medium">{company.customer_name}</TableCell>
-                  <TableCell>{company.customer_id}</TableCell>
-                  <TableCell>{getContactName(company)}</TableCell>
-                  <TableCell>
-                    {company.customer_sub_type ? (
-                      <Badge variant="outline">{company.customer_sub_type}</Badge>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-                  <TableCell>{company.email || "—"}</TableCell>
-                  <TableCell>{company.phone || "—"}</TableCell>
+                  <TableCell>{company.address_line_1 || "—"}</TableCell>
+                  <TableCell>{company.city || "—"}</TableCell>
+                  <TableCell>{company.state || "—"}</TableCell>
+                  <TableCell>{company.postal_code || "—"}</TableCell>
                   <TableCell className="text-center">{company.ordersCount || 0}</TableCell>
                   <TableCell className="text-center">{company.invoicesCount || 0}</TableCell>
                   <TableCell className="text-right">
