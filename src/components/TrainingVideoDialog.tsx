@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { extractVimeoId, isValidVimeoUrl } from "@/utils/vimeoHelpers";
 
 const VIDEO_CATEGORIES = [
+  { value: "getting-started", label: "🚀 Getting Started" },
   { value: "inventory", label: "📦 Inventory Management" },
   { value: "donate", label: "💰 Donations & Fundraising" },
   { value: "volunteer", label: "🙋 Volunteer Management" },

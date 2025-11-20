@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const VIDEO_CATEGORIES = [
+  { value: "getting-started", label: "🚀 Getting Started" },
   { value: "inventory", label: "📦 Inventory Management" },
   { value: "donate", label: "💰 Donations & Fundraising" },
   { value: "volunteer", label: "🙋 Volunteer Management" },
@@ -91,6 +92,13 @@ export default function TrainingVideos() {
     acc[video.category].push(video);
     return acc;
   }, {} as Record<string, Video[]>);
+
+  // Sort categories with "getting-started" first, then alphabetically
+  const sortedCategories = Object.keys(videosByCategory || {}).sort((a, b) => {
+    if (a === "getting-started") return -1;
+    if (b === "getting-started") return 1;
+    return a.localeCompare(b);
+  });
 
   const handleAddVideo = () => {
     setSelectedVideo(undefined);
@@ -197,8 +205,9 @@ export default function TrainingVideos() {
             </Button>
           </div>
         ) : (
-          <Accordion type="multiple" defaultValue={Object.keys(videosByCategory || {})} className="space-y-4">
-            {Object.entries(videosByCategory || {}).map(([category, categoryVideos]) => {
+          <Accordion type="multiple" defaultValue={sortedCategories} className="space-y-4">
+            {sortedCategories.map((category) => {
+              const categoryVideos = videosByCategory?.[category] || [];
               const categoryInfo = VIDEO_CATEGORIES.find((c) => c.value === category);
               return (
                 <AccordionItem key={category} value={category} className="border rounded-lg px-6">
