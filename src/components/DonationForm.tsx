@@ -36,8 +36,19 @@ const donationSchema = z.object({
 
 type DonationFormData = z.infer<typeof donationSchema>;
 
-// Initialize Stripe with publishable key
-const stripePromise = loadStripe('pk_live_51SFJjtKmxAajjU1WN6uwAjy1FcS4b0glE8Jwb8BcrLy6yvr5QFlgELNY9DQIytkZyeDrC7rNWR2fr0sCkipaG57900Hr3gEdNo');
+// Initialize Stripe with publishable key (dynamic based on test mode)
+const getStripePromise = () => {
+  const searchParams = new URLSearchParams(window.location.search);
+  const isTestMode = searchParams.get('test') === 'true';
+  
+  const publishableKey = isTestMode 
+    ? 'pk_test_51SFJjtKmxAajjU1WrVZAALOyCOWoURN0halw7hxdPPgVcsTPDavemvPD5LcK4CM6rQVvCeJKj9rqwDwDG7rM8wqL00Sz8QWMq6'
+    : 'pk_live_51SFJjtKmxAajjU1WN6uwAjy1FcS4b0glE8Jwb8BcrLy6yvr5QFlgELNY9DQIytkZyeDrC7rNWR2fr0sCkipaG57900Hr3gEdNo';
+  
+  return loadStripe(publishableKey);
+};
+
+const stripePromise = getStripePromise();
 
 // Payment Form Component
 const PaymentForm = ({ 
