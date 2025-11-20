@@ -1,6 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-
-const MAPBOX_TOKEN = "pk.eyJ1Ijoic3VuZGl1cyIsImEiOiJjbTQyYWxvZHAwMHE3MnFzNzd3NHBvMXhqIn0.bRbcLmhYqnq64BVJZQHMNg";
+import { MAPBOX_TOKEN } from "./mapboxConfig";
 
 interface GeocodeResult {
   center: [number, number]; // [longitude, latitude]
