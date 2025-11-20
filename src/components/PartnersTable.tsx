@@ -187,6 +187,7 @@ export const PartnersTable = ({
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead>Street Address</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>City</TableHead>
                 <TableHead>State</TableHead>
@@ -200,7 +201,7 @@ export const PartnersTable = ({
             <TableBody>
               {filteredPartners.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                     No partners found
                   </TableCell>
                 </TableRow>
@@ -214,6 +215,7 @@ export const PartnersTable = ({
                     onClick={() => onRowClick?.(partner.id)}
                   >
                     <TableCell className="font-medium">{partner.name}</TableCell>
+                    <TableCell>{partner.address_line_1 || "-"}</TableCell>
                     <TableCell>{partner.contact_name || "-"}</TableCell>
                     <TableCell>{partner.city || "-"}</TableCell>
                     <TableCell>{partner.state || "-"}</TableCell>

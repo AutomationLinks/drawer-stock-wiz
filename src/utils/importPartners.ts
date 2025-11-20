@@ -72,7 +72,7 @@ export const importPartners = async (
       state: row["state"]?.trim() || null,
       country: row["country"]?.trim() || "USA",
       status: row["status"]?.trim() || "Active",
-      is_out_of_state: row["is_out_of_state"]?.toLowerCase() === "true" || row["is_out_of_state"] === "1",
+      is_out_of_state: row["is_out_of_state"]?.toLowerCase() === "yes" || row["is_out_of_state"]?.toLowerCase() === "true" || row["is_out_of_state"] === "1",
       notes: row["notes"]?.trim() || null,
     };
 
