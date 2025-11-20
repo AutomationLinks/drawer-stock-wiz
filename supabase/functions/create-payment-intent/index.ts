@@ -13,10 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-      apiVersion: '2023-10-16',
-    });
-
+    const requestBody = await req.json();
     const { 
       name, 
       email, 
@@ -30,7 +27,18 @@ serve(async (req) => {
       campaign,
       couponCode,
       isTestMode
-    } = await req.json();
+    } = requestBody;
+
+    // Determine which secret key to use based on test mode
+    const stripeSecretKey = isTestMode 
+      ? Deno.env.get('STRIPE_TEST_SECRET_KEY')
+      : Deno.env.get('STRIPE_SECRET_KEY');
+
+    const stripe = new Stripe(stripeSecretKey || '', {
+      apiVersion: '2023-10-16',
+    });
+
+    console.log('Processing payment:', { name, email, amount, frequency, campaign, mode: isTestMode ? 'TEST' : 'LIVE' });
 
     console.log('Processing payment:', { name, email, amount, frequency, campaign });
 
