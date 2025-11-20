@@ -4,6 +4,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
+import { MAPBOX_TOKEN } from "@/utils/mapboxConfig";
 
 interface Partner {
   id: string;
@@ -28,7 +29,6 @@ export const PartnerMap = ({ partners, selectedPartnerId, onMarkerClick }: Partn
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<Map<string, mapboxgl.Marker>>(new Map());
-  const MAPBOX_TOKEN = "pk.eyJ1IjoiYXV0b21hdGlvbmxpbmtzIiwiYSI6ImNtaDNvd241cDA5NmUya3E1bWcxMWl3NHcifQ.cZvSmiJEocnSxN6uomeAfg";
   const [mapboxToken, setMapboxToken] = useState(MAPBOX_TOKEN);
   const [showTokenInput, setShowTokenInput] = useState(false);
 
