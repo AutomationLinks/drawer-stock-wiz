@@ -188,7 +188,8 @@ export const ImportCompaniesDialog = ({ open, onOpenChange, onSuccess }: ImportC
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 <div className="space-y-1">
-                  <div>Successfully imported: {result.successCount}</div>
+                  <div>Successfully imported (inserted/updated): {result.successCount}</div>
+                  <div>Skipped (existing companies): {result.skippedCount}</div>
                   <div>Errors: {result.errorCount}</div>
                   {result.errors.length > 0 && (
                     <Button

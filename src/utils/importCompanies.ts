@@ -17,6 +17,7 @@ export interface ImportResult {
   success: boolean;
   successCount: number;
   errorCount: number;
+  skippedCount: number;
   errors: Array<{ row: number; message: string }>;
 }
 
@@ -30,6 +31,7 @@ export const importCompanies = async (
     success: false,
     successCount: 0,
     errorCount: 0,
+    skippedCount: 0,
     errors: [],
   };
 
@@ -70,8 +72,7 @@ export const importCompanies = async (
           if (existing) {
             // Company exists - update or skip
             if (skipDuplicates) {
-              result.errors.push({ row: rowNumber, message: "Company exists - skipped" });
-              result.errorCount++;
+              result.skippedCount++;
               continue;
             } else {
               // Update existing company with address data
