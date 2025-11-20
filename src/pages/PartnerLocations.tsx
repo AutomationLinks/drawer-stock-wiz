@@ -8,6 +8,7 @@ import { PartnerMap } from "@/components/PartnerMap";
 import { PartnersTable } from "@/components/PartnersTable";
 import { PartnerDialog } from "@/components/PartnerDialog";
 import { ImportPartnersButton } from "@/components/ImportPartnersButton";
+import { GeocodePartnersButton } from "@/components/GeocodePartnersButton";
 
 const PartnerLocations = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,7 +16,7 @@ const PartnerLocations = () => {
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | undefined>();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
 
-  const { data: partners = [], isLoading } = useQuery({
+  const { data: partners = [], isLoading, refetch } = useQuery({
     queryKey: ["partners"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -42,6 +43,7 @@ const PartnerLocations = () => {
               </p>
             </div>
             <div className="flex gap-2">
+              <GeocodePartnersButton onComplete={() => refetch()} />
               <ImportPartnersButton />
               <Button onClick={() => setAddDialogOpen(true)} className="gap-2">
                 <Plus className="h-4 w-4" />

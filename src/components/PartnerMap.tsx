@@ -75,31 +75,45 @@ export const PartnerMap = ({ partners, selectedPartnerId, onMarkerClick }: Partn
     // Add markers for partners with coordinates
     const bounds = new mapboxgl.LngLatBounds();
     let hasValidCoordinates = false;
+    let markerCount = 0;
 
     partners.forEach((partner) => {
       if (partner.latitude && partner.longitude) {
         hasValidCoordinates = true;
+        markerCount++;
 
         const el = document.createElement("div");
         el.className = "custom-marker";
-        el.innerHTML = `<div style="color: hsl(var(--primary)); cursor: pointer;">
+        el.innerHTML = `<div style="color: hsl(var(--primary)); cursor: pointer; transition: transform 0.2s;">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="white" stroke-width="1">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
             <circle cx="12" cy="10" r="3" fill="white"></circle>
           </svg>
         </div>`;
 
+        el.addEventListener("mouseenter", () => {
+          el.style.transform = "scale(1.2)";
+        });
+
+        el.addEventListener("mouseleave", () => {
+          el.style.transform = "scale(1)";
+        });
+
         el.addEventListener("click", () => {
           onMarkerClick?.(partner.id);
         });
 
-        const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-          <div style="padding: 8px;">
-            <h3 style="font-weight: bold; margin-bottom: 4px;">${partner.name}</h3>
-            ${partner.address_line_1 ? `<p style="font-size: 14px; margin: 2px 0;">${partner.address_line_1}</p>` : ""}
-            ${partner.city && partner.state ? `<p style="font-size: 14px; margin: 2px 0;">${partner.city}, ${partner.state} ${partner.postal_code}</p>` : ""}
-            ${partner.phone ? `<p style="font-size: 14px; margin: 2px 0;">📞 ${partner.phone}</p>` : ""}
-            ${partner.email ? `<p style="font-size: 14px; margin: 2px 0;">✉️ ${partner.email}</p>` : ""}
+        const popup = new mapboxgl.Popup({ 
+          offset: 25,
+          closeButton: true,
+          className: "partner-popup"
+        }).setHTML(`
+          <div style="padding: 12px; min-width: 200px;">
+            <h3 style="font-weight: 600; font-size: 16px; margin-bottom: 8px; color: hsl(var(--foreground));">${partner.name}</h3>
+            ${partner.address_line_1 ? `<p style="font-size: 13px; margin: 4px 0; color: hsl(var(--muted-foreground));">${partner.address_line_1}</p>` : ""}
+            ${partner.city && partner.state ? `<p style="font-size: 13px; margin: 4px 0; color: hsl(var(--muted-foreground));">${partner.city}, ${partner.state} ${partner.postal_code}</p>` : ""}
+            ${partner.phone ? `<p style="font-size: 13px; margin: 6px 0; color: hsl(var(--muted-foreground));">📞 ${partner.phone}</p>` : ""}
+            ${partner.email ? `<p style="font-size: 13px; margin: 4px 0; color: hsl(var(--muted-foreground)); word-break: break-all;">✉️ ${partner.email}</p>` : ""}
           </div>
         `);
 
@@ -114,10 +128,10 @@ export const PartnerMap = ({ partners, selectedPartnerId, onMarkerClick }: Partn
     });
 
     // Fit map to show all markers
-    if (hasValidCoordinates && partners.length > 0) {
+    if (hasValidCoordinates && markerCount > 0) {
       map.current.fitBounds(bounds, {
-        padding: 50,
-        maxZoom: 12,
+        padding: { top: 50, bottom: 50, left: 50, right: 50 },
+        maxZoom: markerCount === 1 ? 12 : 15,
       });
     }
   }, [partners, onMarkerClick]);

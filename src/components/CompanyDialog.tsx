@@ -19,6 +19,12 @@ interface Company {
   customer_sub_type?: string;
   billing_address?: string;
   shipping_address?: string;
+  address_line_1?: string;
+  address_line_2?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
 }
 
 interface CompanyDialogProps {
@@ -41,6 +47,12 @@ export const CompanyDialog = ({ open, onOpenChange, company, onSuccess }: Compan
     customer_sub_type: company?.customer_sub_type || "",
     billing_address: company?.billing_address || "",
     shipping_address: company?.shipping_address || "",
+    address_line_1: company?.address_line_1 || "",
+    address_line_2: company?.address_line_2 || "",
+    city: company?.city || "",
+    state: company?.state || "",
+    postal_code: company?.postal_code || "",
+    country: company?.country || "USA",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -226,6 +238,71 @@ export const CompanyDialog = ({ open, onOpenChange, company, onSuccess }: Compan
               onChange={(e) => setFormData({ ...formData, shipping_address: e.target.value })}
               placeholder="123 Main St, City, State ZIP"
               rows={2}
+            />
+          </div>
+
+          <div className="col-span-2">
+            <h3 className="text-lg font-semibold mb-4">Location</h3>
+          </div>
+
+          <div className="col-span-2">
+            <Label htmlFor="address_line_1">Address Line 1</Label>
+            <Input
+              id="address_line_1"
+              value={formData.address_line_1}
+              onChange={(e) => setFormData({ ...formData, address_line_1: e.target.value })}
+              placeholder="123 Main Street"
+            />
+          </div>
+
+          <div className="col-span-2">
+            <Label htmlFor="address_line_2">Address Line 2</Label>
+            <Input
+              id="address_line_2"
+              value={formData.address_line_2}
+              onChange={(e) => setFormData({ ...formData, address_line_2: e.target.value })}
+              placeholder="Suite 100"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="city">City</Label>
+            <Input
+              id="city"
+              value={formData.city}
+              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+              placeholder="Minneapolis"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="state">State</Label>
+            <Input
+              id="state"
+              value={formData.state}
+              onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+              placeholder="MN"
+              maxLength={2}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="postal_code">Zip Code</Label>
+            <Input
+              id="postal_code"
+              value={formData.postal_code}
+              onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
+              placeholder="55401"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="country">Country</Label>
+            <Input
+              id="country"
+              value={formData.country}
+              onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+              placeholder="USA"
             />
           </div>
 
