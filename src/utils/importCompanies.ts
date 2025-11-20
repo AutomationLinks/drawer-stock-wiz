@@ -2,14 +2,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { parseCSV, parseDate, validateRequiredColumns } from "./csvParser";
 
 interface CompanyCSVRow {
-  "Created Time"?: string;
-  "Last Modified Time"?: string;
-  "Contact ID": string;
-  "Customer Sub Type"?: string;
-  "Companies": string;
-  "First Name"?: string;
-  "Last Name"?: string;
-  "EmailID"?: string;
+  "Company Name": string;
+  "Email "?: string;
+  "Street Address"?: string;
+  "City"?: string;
+  "State"?: string;
+  "Zip Code"?: string;
+  "Notes"?: string;
+  "Orders"?: string;
+  "Invoices"?: string;
 }
 
 export interface ImportResult {
@@ -19,14 +20,6 @@ export interface ImportResult {
   errors: Array<{ row: number; message: string }>;
 }
 
-const cleanPhoneNumber = (phone: string): string => {
-  return phone.replace(/[^\d+]/g, "");
-};
-
-const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
 
 export const importCompanies = async (
   file: File,
@@ -58,7 +51,7 @@ export const importCompanies = async (
         
         try {
           // Validate required columns
-          const validationError = validateRequiredColumns(row, ["Companies", "Contact ID"]);
+          const validationError = validateRequiredColumns(row, ["Company Name"]);
           if (validationError) {
             result.errors.push({ row: rowNumber, message: validationError });
             result.errorCount++;
@@ -67,50 +60,69 @@ export const importCompanies = async (
 
           const csvRow = row as unknown as CompanyCSVRow;
           
-          // Validate email if provided
-          if (csvRow.EmailID && !validateEmail(csvRow.EmailID)) {
-            result.errors.push({ row: rowNumber, message: "Invalid email format" });
-            result.errorCount++;
-            continue;
-          }
+          // Check if company exists by name
+          const { data: existing } = await supabase
+            .from("customers")
+            .select("id, customer_id")
+            .eq("customer_name", csvRow["Company Name"])
+            .maybeSingle();
 
-          // Check for duplicates if skipDuplicates is true
-          if (skipDuplicates) {
-            const { data: existing } = await supabase
-              .from("customers")
-              .select("id")
-              .eq("customer_id", csvRow["Contact ID"])
-              .single();
-
-            if (existing) {
-              result.errors.push({ row: rowNumber, message: "Duplicate Contact ID - skipped" });
+          if (existing) {
+            // Company exists - update or skip
+            if (skipDuplicates) {
+              result.errors.push({ row: rowNumber, message: "Company exists - skipped" });
               result.errorCount++;
               continue;
+            } else {
+              // Update existing company with address data
+              const { error } = await supabase
+                .from("customers")
+                .update({
+                  email: csvRow["Email "] || null,
+                  address_line_1: csvRow["Street Address"] || null,
+                  city: csvRow["City"] || null,
+                  state: csvRow["State"] || null,
+                  postal_code: csvRow["Zip Code"] || null,
+                  country: 'USA',
+                  notes: csvRow["Notes"] === "None" ? null : (csvRow["Notes"] || null),
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", existing.id);
+                
+              if (error) {
+                result.errors.push({ row: rowNumber, message: error.message });
+                result.errorCount++;
+              } else {
+                result.successCount++;
+              }
+              continue;
             }
-          }
-
-          // Prepare data for insertion
-          const companyData = {
-            customer_id: csvRow["Contact ID"],
-            customer_name: csvRow.Companies,
-            first_name: csvRow["First Name"] || null,
-            last_name: csvRow["Last Name"] || null,
-            email: csvRow.EmailID || null,
-            customer_sub_type: csvRow["Customer Sub Type"] || null,
-            created_at: csvRow["Created Time"] ? parseDate(csvRow["Created Time"])?.toISOString() : new Date().toISOString(),
-            updated_at: csvRow["Last Modified Time"] ? parseDate(csvRow["Last Modified Time"])?.toISOString() : new Date().toISOString(),
-          };
-
-          // Insert into database
-          const { error } = await supabase
-            .from("customers")
-            .insert([companyData]);
-
-          if (error) {
-            result.errors.push({ row: rowNumber, message: error.message });
-            result.errorCount++;
           } else {
-            result.successCount++;
+            // Insert new company
+            const companyData = {
+              customer_id: `COMP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              customer_name: csvRow["Company Name"],
+              email: csvRow["Email "] || null,
+              address_line_1: csvRow["Street Address"] || null,
+              city: csvRow["City"] || null,
+              state: csvRow["State"] || null,
+              postal_code: csvRow["Zip Code"] || null,
+              country: 'USA',
+              notes: csvRow["Notes"] === "None" ? null : (csvRow["Notes"] || null),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+
+            const { error } = await supabase
+              .from("customers")
+              .insert([companyData]);
+
+            if (error) {
+              result.errors.push({ row: rowNumber, message: error.message });
+              result.errorCount++;
+            } else {
+              result.successCount++;
+            }
           }
         } catch (error) {
           result.errors.push({

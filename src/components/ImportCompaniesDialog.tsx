@@ -22,12 +22,12 @@ export const ImportCompaniesDialog = ({ open, onOpenChange, onSuccess }: ImportC
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<ImportResult | null>(null);
-  const [skipDuplicates, setSkipDuplicates] = useState(true);
+  const [skipDuplicates, setSkipDuplicates] = useState(false);
 
   const downloadTemplate = () => {
-    const template = `Created Time,Last Modified Time,Contact ID,Customer Sub Type,Companies,First Name,Last Name,EmailID
-2024-01-15,2024-01-15,CUST-001,Partner,ABC Corporation,John,Doe,john@abc.com
-2024-01-16,2024-01-20,CUST-002,Client,XYZ Inc,Jane,Smith,jane@xyz.com`;
+    const template = `Company Name,Email ,Street Address,City,State,Zip Code,Notes
+180 Degrees St Cloud,info@example.org,1101 Washington Memorial Dr,Saint Cloud,MN,56301,None
+360 Communities,info@example.org,501 Hwy 13 E #112,Burnsville,MN,55337,Partner organization`;
     
     const blob = new Blob([template], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
@@ -170,7 +170,7 @@ export const ImportCompaniesDialog = ({ open, onOpenChange, onSuccess }: ImportC
               disabled={importing}
             />
             <Label htmlFor="skipDuplicates" className="text-sm cursor-pointer">
-              Skip duplicate Contact IDs
+              Skip existing companies (uncheck to update addresses)
             </Label>
           </div>
 
