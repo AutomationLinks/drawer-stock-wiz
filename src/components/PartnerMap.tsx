@@ -23,9 +23,10 @@ interface PartnerMapProps {
   partners: Partner[];
   selectedPartnerId?: string;
   onMarkerClick?: (partnerId: string) => void;
+  showContactInfo?: boolean;
 }
 
-export const PartnerMap = ({ partners, selectedPartnerId, onMarkerClick }: PartnerMapProps) => {
+export const PartnerMap = ({ partners, selectedPartnerId, onMarkerClick, showContactInfo = true }: PartnerMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<Map<string, mapboxgl.Marker>>(new Map());
@@ -93,6 +94,7 @@ export const PartnerMap = ({ partners, selectedPartnerId, onMarkerClick }: Partn
 
         el.addEventListener("mouseenter", () => {
           el.style.transform = "scale(1.2)";
+          marker.getPopup()?.addTo(map.current!);
         });
 
         el.addEventListener("mouseleave", () => {
@@ -112,8 +114,8 @@ export const PartnerMap = ({ partners, selectedPartnerId, onMarkerClick }: Partn
             <h3 style="font-weight: 600; font-size: 16px; margin-bottom: 8px; color: hsl(var(--foreground));">${partner.name}</h3>
             ${partner.address_line_1 ? `<p style="font-size: 13px; margin: 4px 0; color: hsl(var(--muted-foreground));">${partner.address_line_1}</p>` : ""}
             ${partner.city && partner.state ? `<p style="font-size: 13px; margin: 4px 0; color: hsl(var(--muted-foreground));">${partner.city}, ${partner.state} ${partner.postal_code}</p>` : ""}
-            ${partner.phone ? `<p style="font-size: 13px; margin: 6px 0; color: hsl(var(--muted-foreground));">📞 ${partner.phone}</p>` : ""}
-            ${partner.email ? `<p style="font-size: 13px; margin: 4px 0; color: hsl(var(--muted-foreground)); word-break: break-all;">✉️ ${partner.email}</p>` : ""}
+            ${showContactInfo && partner.phone ? `<p style="font-size: 13px; margin: 6px 0; color: hsl(var(--muted-foreground));">📞 ${partner.phone}</p>` : ""}
+            ${showContactInfo && partner.email ? `<p style="font-size: 13px; margin: 4px 0; color: hsl(var(--muted-foreground)); word-break: break-all;">✉️ ${partner.email}</p>` : ""}
           </div>
         `);
 

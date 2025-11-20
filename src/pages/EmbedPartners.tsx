@@ -9,14 +9,10 @@ import { Search, MapPin, Phone, Mail } from "lucide-react";
 interface Partner {
   id: string;
   name: string;
-  contact_name?: string;
-  email?: string;
-  phone?: string;
   address_line_1?: string;
   city?: string;
   state?: string;
   postal_code: string;
-  status?: string;
   latitude?: number;
   longitude?: number;
 }
@@ -30,7 +26,7 @@ const EmbedPartners = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("partners")
-        .select("*")
+        .select("id, name, address_line_1, city, state, postal_code, latitude, longitude")
         .eq("active", true)
         .order("name");
 
@@ -59,6 +55,7 @@ const EmbedPartners = () => {
             partners={filteredPartners}
             selectedPartnerId={selectedPartnerId}
             onMarkerClick={setSelectedPartnerId}
+            showContactInfo={false}
           />
         </div>
 
@@ -97,21 +94,7 @@ const EmbedPartners = () => {
                       )}
                     </div>
                   </div>
-                )}
-
-                {partner.phone && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                    <Phone className="h-4 w-4" />
-                    <span>{partner.phone}</span>
-                  </div>
-                )}
-
-                {partner.email && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Mail className="h-4 w-4" />
-                    <span className="truncate">{partner.email}</span>
-                  </div>
-                )}
+                 )}
               </Card>
             ))}
           </div>
