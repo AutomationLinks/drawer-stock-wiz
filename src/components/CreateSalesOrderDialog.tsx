@@ -73,7 +73,7 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
     const { data } = await supabase
       .from("inventory")
       .select("*")
-      .eq("status", "active")
+      .eq("status", "Active")
       .order("category, item_name");
     if (data) setInventory(data);
   };
