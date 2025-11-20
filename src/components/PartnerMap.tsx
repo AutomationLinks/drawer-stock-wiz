@@ -78,27 +78,40 @@ export const PartnerMap = ({ partners, selectedPartnerId, onMarkerClick, showCon
     let hasValidCoordinates = false;
     let markerCount = 0;
 
+    let closePopupTimeout: NodeJS.Timeout;
+
     partners.forEach((partner) => {
-      if (partner.latitude && partner.longitude) {
+      // Validate coordinates are within reasonable bounds
+      const isValidLat = partner.latitude && partner.latitude >= -90 && partner.latitude <= 90;
+      const isValidLng = partner.longitude && partner.longitude >= -180 && partner.longitude <= 180;
+      
+      if (isValidLat && isValidLng) {
         hasValidCoordinates = true;
         markerCount++;
 
         const el = document.createElement("div");
         el.className = "custom-marker";
-        el.innerHTML = `<div style="color: hsl(var(--primary)); cursor: pointer; transition: transform 0.2s;">
+        el.style.cssText = "width: 32px; height: 32px; cursor: pointer;";
+        el.innerHTML = `<div class="marker-icon" style="color: hsl(var(--primary)); transition: transform 0.2s; width: 100%; height: 100%;">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="white" stroke-width="1">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
             <circle cx="12" cy="10" r="3" fill="white"></circle>
           </svg>
         </div>`;
 
+        const markerIcon = el.querySelector('.marker-icon') as HTMLElement;
+
         el.addEventListener("mouseenter", () => {
-          el.style.transform = "scale(1.2)";
+          clearTimeout(closePopupTimeout);
+          if (markerIcon) markerIcon.style.transform = "scale(1.2)";
           marker.getPopup()?.addTo(map.current!);
         });
 
         el.addEventListener("mouseleave", () => {
-          el.style.transform = "scale(1)";
+          if (markerIcon) markerIcon.style.transform = "scale(1)";
+          closePopupTimeout = setTimeout(() => {
+            marker.getPopup()?.remove();
+          }, 300);
         });
 
         el.addEventListener("click", () => {
@@ -107,10 +120,11 @@ export const PartnerMap = ({ partners, selectedPartnerId, onMarkerClick, showCon
 
         const popup = new mapboxgl.Popup({ 
           offset: 25,
-          closeButton: true,
+          closeButton: false,
+          closeOnClick: false,
           className: "partner-popup"
         }).setHTML(`
-          <div style="padding: 12px; min-width: 200px;">
+          <div class="popup-content" style="padding: 12px; min-width: 200px;">
             <h3 style="font-weight: 600; font-size: 16px; margin-bottom: 8px; color: hsl(var(--foreground));">${partner.name}</h3>
             ${partner.address_line_1 ? `<p style="font-size: 13px; margin: 4px 0; color: hsl(var(--muted-foreground));">${partner.address_line_1}</p>` : ""}
             ${partner.city && partner.state ? `<p style="font-size: 13px; margin: 4px 0; color: hsl(var(--muted-foreground));">${partner.city}, ${partner.state} ${partner.postal_code}</p>` : ""}
@@ -118,6 +132,21 @@ export const PartnerMap = ({ partners, selectedPartnerId, onMarkerClick, showCon
             ${showContactInfo && partner.email ? `<p style="font-size: 13px; margin: 4px 0; color: hsl(var(--muted-foreground)); word-break: break-all;">✉️ ${partner.email}</p>` : ""}
           </div>
         `);
+
+        // Add popup hover events to keep it open when hovering over the popup itself
+        popup.on('open', () => {
+          const popupEl = popup.getElement();
+          if (popupEl) {
+            popupEl.addEventListener('mouseenter', () => {
+              clearTimeout(closePopupTimeout);
+            });
+            popupEl.addEventListener('mouseleave', () => {
+              closePopupTimeout = setTimeout(() => {
+                popup.remove();
+              }, 300);
+            });
+          }
+        });
 
         const marker = new mapboxgl.Marker(el)
           .setLngLat([partner.longitude, partner.latitude])
@@ -132,8 +161,9 @@ export const PartnerMap = ({ partners, selectedPartnerId, onMarkerClick, showCon
     // Fit map to show all markers
     if (hasValidCoordinates && markerCount > 0) {
       map.current.fitBounds(bounds, {
-        padding: { top: 50, bottom: 50, left: 50, right: 50 },
-        maxZoom: markerCount === 1 ? 12 : 15,
+        padding: { top: 80, bottom: 80, left: 80, right: 80 },
+        maxZoom: markerCount === 1 ? 12 : 10,
+        duration: 1000,
       });
     }
   }, [partners, onMarkerClick]);
