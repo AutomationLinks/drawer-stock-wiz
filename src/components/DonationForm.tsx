@@ -37,7 +37,7 @@ const donationSchema = z.object({
 type DonationFormData = z.infer<typeof donationSchema>;
 
 // Initialize Stripe with publishable key
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+const stripePromise = loadStripe('pk_live_51SFJjtKmxAajjU1WN6uwAjy1FcS4b0glE8Jwb8BcrLy6yvr5QFlgELNY9DQIytkZyeDrC7rNWR2fr0sCkipaG57900Hr3gEdNo');
 
 // Payment Form Component
 const PaymentForm = ({ 
