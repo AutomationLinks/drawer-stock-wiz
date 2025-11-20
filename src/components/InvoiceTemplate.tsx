@@ -56,49 +56,51 @@ export const InvoiceTemplate = ({ order, onClose, isInvoice = false }: InvoiceTe
 
         <div className="bg-card border rounded-lg p-8 print:border-0">
           <div className="flex justify-between items-start mb-8">
-            <img src={logo} alt="The Drawer Logo" className="h-20" />
+            <div>
+              <img src={logo} alt="The Drawer Logo" className="h-16 mb-2" />
+              <p className="text-sm text-muted-foreground">
+                The Drawer<br/>
+                Burnsville Minnesota 55337<br/>
+                U.S.A
+              </p>
+            </div>
             <div className="text-right">
-              <h1 className="text-3xl font-bold">{documentTitle}</h1>
-              <p className="text-muted-foreground">{documentNumber}</p>
+              <h1 className="text-3xl font-bold mb-2">{documentTitle}</h1>
+              <p className="text-lg font-medium">{isInvoice ? 'Invoice' : 'Sales Order'}# {documentNumber}</p>
               {isInvoice && (
                 <p className="text-sm text-muted-foreground mt-1">Donation Receipt</p>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 mb-8">
-            <div>
-              <h3 className="font-semibold mb-2">Bill To:</h3>
-              <p className="font-medium">{order.customers.customer_name}</p>
-              <p className="text-sm text-muted-foreground whitespace-pre-line">
-                {order.customers.billing_address}
-              </p>
-            </div>
-            <div className="text-right">
-              <div className="mb-2">
-                <span className="font-semibold">{isInvoice ? 'Invoice' : 'Order'} Date: </span>
-                {format(new Date(order.order_date), "MMM dd, yyyy")}
+          <div className="mb-6">
+            <h3 className="font-semibold mb-2">Bill To</h3>
+            <p className="font-medium text-lg">{order.customers.customer_name}</p>
+          </div>
+
+          <div className="text-right mb-6">
+            <span className="font-semibold">Order Date : </span>
+            {format(new Date(order.order_date), "dd MMM yyyy")}
+            {order.due_date && (
+              <div className="mt-1">
+                <span className="font-semibold">Due Date : </span>
+                {format(new Date(order.due_date), "dd MMM yyyy")}
               </div>
-              {order.due_date && (
-                <div className="mb-2">
-                  <span className="font-semibold">Due Date: </span>
-                  {format(new Date(order.due_date), "MMM dd, yyyy")}
-                </div>
-              )}
-              {order.payment_terms && (
-                <div className="mb-2">
-                  <span className="font-semibold">Payment Terms: </span>
-                  {order.payment_terms}
-                </div>
-              )}
-            </div>
+            )}
+            {order.payment_terms && (
+              <div className="mt-1">
+                <span className="font-semibold">Payment Terms : </span>
+                {order.payment_terms}
+              </div>
+            )}
           </div>
 
           <table className="w-full mb-8">
             <thead>
               <tr className="border-b-2">
-                <th className="text-left py-2">Item Description</th>
-                <th className="text-right py-2">Quantity</th>
+                <th className="text-left py-2 w-12">#</th>
+                <th className="text-left py-2">Item & Description</th>
+                <th className="text-right py-2">Qty</th>
                 <th className="text-right py-2">Rate</th>
                 <th className="text-right py-2">Amount</th>
               </tr>
@@ -106,9 +108,10 @@ export const InvoiceTemplate = ({ order, onClose, isInvoice = false }: InvoiceTe
             <tbody>
               {items?.map((item: any, index: number) => (
                 <tr key={index} className="border-b">
+                  <td className="py-3 text-left">{index + 1}</td>
                   <td className="py-3">{item.item_name}</td>
                   <td className="text-right py-3">
-                    {isInvoice ? item.quantity : `${item.quantity_ordered} ${item.usage_unit}`}
+                    {isInvoice ? item.quantity : item.quantity_ordered}
                   </td>
                   <td className="text-right py-3">$0.00</td>
                   <td className="text-right py-3">$0.00</td>
@@ -120,7 +123,7 @@ export const InvoiceTemplate = ({ order, onClose, isInvoice = false }: InvoiceTe
           <div className="flex justify-end">
             <div className="w-64">
               <div className="flex justify-between py-2">
-                <span>Subtotal:</span>
+                <span>Sub Total:</span>
                 <span>$0.00</span>
               </div>
               <div className="flex justify-between py-2 border-t-2 font-bold text-lg">

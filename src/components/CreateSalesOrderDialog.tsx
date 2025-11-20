@@ -8,9 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Trash2, Check, ChevronsUpDown, AlertTriangle, PackageSearch } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CustomerDialog } from "./CustomerDialog";
+import { Badge } from "@/components/ui/badge";
 
 interface CreateSalesOrderDialogProps {
   open: boolean;
@@ -24,26 +25,42 @@ interface Customer {
   customer_name: string;
 }
 
+interface InventoryItem {
+  id: string;
+  item_name: string;
+  category: string;
+  stock_on_hand: number;
+  price_per_unit: number;
+  unit: string;
+}
+
 interface OrderItem {
   item_name: string;
   quantity_ordered: number;
   item_price: number;
-  inventory_id?: string;
+  inventory_id: string;
+  stock_available: number;
+  category: string;
+  usage_unit: string;
 }
 
 export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: CreateSalesOrderDialogProps) => {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
   const [orderDate, setOrderDate] = useState(new Date().toISOString().split("T")[0]);
   const [paymentTerms, setPaymentTerms] = useState("Due on Receipt");
-  const [items, setItems] = useState<OrderItem[]>([{ item_name: "", quantity_ordered: 0, item_price: 0 }]);
+  const [notes, setNotes] = useState("");
+  const [items, setItems] = useState<OrderItem[]>([]);
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
+  const [itemSearchOpen, setItemSearchOpen] = useState<number | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     if (open) {
       fetchCustomers();
+      fetchInventory();
     }
   }, [open]);
 
@@ -52,17 +69,49 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
     if (data) setCustomers(data);
   };
 
+  const fetchInventory = async () => {
+    const { data } = await supabase
+      .from("inventory")
+      .select("*")
+      .eq("status", "active")
+      .order("category, item_name");
+    if (data) setInventory(data);
+  };
+
   const addItem = () => {
-    setItems([...items, { item_name: "", quantity_ordered: 0, item_price: 0 }]);
+    setItems([...items, { 
+      item_name: "", 
+      quantity_ordered: 0, 
+      item_price: 0,
+      inventory_id: "",
+      stock_available: 0,
+      category: "",
+      usage_unit: "pairs"
+    }]);
   };
 
   const removeItem = (index: number) => {
     setItems(items.filter((_, i) => i !== index));
   };
 
-  const updateItem = (index: number, field: keyof OrderItem, value: string | number) => {
+  const selectInventoryItem = (index: number, inventoryItem: InventoryItem) => {
     const newItems = [...items];
-    newItems[index] = { ...newItems[index], [field]: value };
+    newItems[index] = {
+      item_name: inventoryItem.item_name,
+      quantity_ordered: 1,
+      item_price: inventoryItem.price_per_unit,
+      inventory_id: inventoryItem.id,
+      stock_available: inventoryItem.stock_on_hand,
+      category: inventoryItem.category,
+      usage_unit: inventoryItem.unit,
+    };
+    setItems(newItems);
+    setItemSearchOpen(null);
+  };
+
+  const updateItemQuantity = (index: number, quantity: number) => {
+    const newItems = [...items];
+    newItems[index] = { ...newItems[index], quantity_ordered: quantity };
     setItems(newItems);
   };
 
@@ -70,9 +119,31 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
     return items.reduce((sum, item) => sum + (item.quantity_ordered * item.item_price), 0);
   };
 
+  const getStockStatus = (ordered: number, available: number) => {
+    if (available === 0) return { color: "destructive", text: "Out of Stock" };
+    if (ordered > available) return { color: "destructive", text: "Exceeds Stock" };
+    if (available < 10) return { color: "default", text: "Low Stock" };
+    return { color: "secondary", text: "In Stock" };
+  };
+
   const handleSubmit = async () => {
-    if (!selectedCustomer || items.length === 0) {
-      toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
+    if (!selectedCustomer || items.length === 0 || items.some(item => !item.inventory_id)) {
+      toast({ 
+        title: "Error", 
+        description: "Please select a customer and add at least one item from inventory", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    // Check for stock issues
+    const stockIssues = items.filter(item => item.quantity_ordered > item.stock_available);
+    if (stockIssues.length > 0) {
+      toast({
+        title: "Stock Warning",
+        description: `${stockIssues.length} item(s) exceed available stock. Please adjust quantities.`,
+        variant: "destructive",
+      });
       return;
     }
 
@@ -101,6 +172,7 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
         order_status: 'closed',
         payment_status: 'paid',
         shipment_status: 'fulfilled',
+        notes: notes || null,
       })
       .select()
       .single();
@@ -112,32 +184,43 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
 
     const orderItems = items.map(item => ({
       sales_order_id: order.id,
+      inventory_id: item.inventory_id,
       item_name: item.item_name,
       quantity_ordered: item.quantity_ordered,
+      quantity_fulfilled: item.quantity_ordered,
       item_price: item.item_price,
       item_total: item.quantity_ordered * item.item_price,
-      inventory_id: item.inventory_id,
+      usage_unit: item.usage_unit,
     }));
 
     const { error: itemsError } = await supabase.from("sales_order_items").insert(orderItems);
 
     if (itemsError) {
-      toast({ title: "Error creating order items", description: itemsError.message, variant: "destructive" });
+      toast({ title: "Error adding items", description: itemsError.message, variant: "destructive" });
       return;
     }
 
-    toast({ title: "Success", description: `Order ${newOrderNumber} created successfully` });
+    toast({ title: "Success", description: `Sales order ${newOrderNumber} created successfully` });
+    resetForm();
     onSuccess();
     onOpenChange(false);
-    resetForm();
   };
 
   const resetForm = () => {
     setSelectedCustomer("");
     setOrderDate(new Date().toISOString().split("T")[0]);
     setPaymentTerms("Due on Receipt");
-    setItems([{ item_name: "", quantity_ordered: 0, item_price: 0 }]);
+    setNotes("");
+    setItems([]);
   };
+
+  const groupedInventory = inventory.reduce((acc, item) => {
+    if (!acc[item.category]) {
+      acc[item.category] = [];
+    }
+    acc[item.category].push(item);
+    return acc;
+  }, {} as Record<string, InventoryItem[]>);
 
   return (
     <>
@@ -147,136 +230,257 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
             <DialogTitle>Create New Sales Order</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Customer</Label>
-                <div className="flex gap-2">
-                  <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={customerSearchOpen}
-                        className="flex-1 justify-between"
-                      >
-                        {selectedCustomer
-                          ? customers.find((customer) => customer.id === selectedCustomer)?.customer_name
-                          : "Select customer..."}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[400px] p-0">
-                      <Command>
-                        <CommandInput placeholder="Search customers..." />
-                        <CommandList>
-                          <CommandEmpty>No customer found.</CommandEmpty>
-                          <CommandGroup>
-                            {customers.map((customer) => (
-                              <CommandItem
-                                key={customer.id}
-                                value={customer.customer_name}
-                                onSelect={() => {
-                                  setSelectedCustomer(customer.id);
-                                  setCustomerSearchOpen(false);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    selectedCustomer === customer.id ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                {customer.customer_name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsCustomerDialogOpen(true)}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
+              <div>
+                <Label>Customer *</Label>
+                <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-between mt-2"
+                    >
+                      {selectedCustomer
+                        ? customers.find((c) => c.id === selectedCustomer)?.customer_name
+                        : "Select customer..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Search customer..." />
+                      <CommandList>
+                        <CommandEmpty>
+                          <div className="p-4 text-center">
+                            <p className="text-sm text-muted-foreground mb-2">No customer found</p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setCustomerSearchOpen(false);
+                                setIsCustomerDialogOpen(true);
+                              }}
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add New Customer
+                            </Button>
+                          </div>
+                        </CommandEmpty>
+                        <CommandGroup>
+                          {customers.map((customer) => (
+                            <CommandItem
+                              key={customer.id}
+                              value={customer.customer_name}
+                              onSelect={() => {
+                                setSelectedCustomer(customer.id);
+                                setCustomerSearchOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedCustomer === customer.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {customer.customer_name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
-              <div className="space-y-2">
-                <Label>Order Date</Label>
-                <Input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Payment Terms</Label>
-                <Input value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} />
+              <div>
+                <Label htmlFor="order-date">Order Date *</Label>
+                <Input
+                  id="order-date"
+                  type="date"
+                  value={orderDate}
+                  onChange={(e) => setOrderDate(e.target.value)}
+                  className="mt-2"
+                />
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Label>Order Items</Label>
-                <Button onClick={addItem} size="sm" variant="outline">
-                  <Plus className="mr-2 h-4 w-4" />
+            <div>
+              <Label htmlFor="payment-terms">Payment Terms</Label>
+              <Input
+                id="payment-terms"
+                value={paymentTerms}
+                onChange={(e) => setPaymentTerms(e.target.value)}
+                className="mt-2"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add any additional notes..."
+                className="mt-2"
+              />
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <Label>Items *</Label>
+                <Button onClick={addItem} variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
                   Add Item
                 </Button>
               </div>
 
-              {items.map((item, index) => (
-                <div key={index} className="grid grid-cols-12 gap-2 items-end">
-                  <div className="col-span-5">
-                    <Label>Item Name</Label>
-                    <Input
-                      value={item.item_name}
-                      onChange={(e) => updateItem(index, "item_name", e.target.value)}
-                      placeholder="Item name"
-                    />
-                  </div>
-                  <div className="col-span-3">
-                    <Label>Quantity</Label>
-                    <Input
-                      type="number"
-                      value={item.quantity_ordered}
-                      onChange={(e) => updateItem(index, "quantity_ordered", parseFloat(e.target.value) || 0)}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className="col-span-3">
-                    <Label>Price</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={item.item_price}
-                      onChange={(e) => updateItem(index, "item_price", parseFloat(e.target.value) || 0)}
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeItem(index)}
-                      disabled={items.length === 1}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+              <div className="space-y-3">
+                {items.map((item, index) => {
+                  const stockStatus = item.inventory_id ? getStockStatus(item.quantity_ordered, item.stock_available) : null;
+                  
+                  return (
+                    <div key={index} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex gap-2 items-start">
+                        <div className="flex-1">
+                          <Label className="text-xs">Product</Label>
+                          <Popover open={itemSearchOpen === index} onOpenChange={(open) => setItemSearchOpen(open ? index : null)}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className="w-full justify-between mt-1"
+                              >
+                                {item.item_name || "Select product..."}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[500px] p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Search products..." />
+                                <CommandList>
+                                  <CommandEmpty>
+                                    <div className="p-4 text-center text-sm text-muted-foreground">
+                                      <PackageSearch className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                      No products found
+                                    </div>
+                                  </CommandEmpty>
+                                  {Object.entries(groupedInventory).map(([category, categoryItems]) => (
+                                    <CommandGroup key={category} heading={category}>
+                                      {categoryItems.map((invItem) => (
+                                        <CommandItem
+                                          key={invItem.id}
+                                          value={invItem.item_name}
+                                          onSelect={() => selectInventoryItem(index, invItem)}
+                                          className="flex justify-between"
+                                        >
+                                          <div>
+                                            <div className="font-medium">{invItem.item_name}</div>
+                                            <div className="text-xs text-muted-foreground">
+                                              ${invItem.price_per_unit.toFixed(2)} per {invItem.unit}
+                                            </div>
+                                          </div>
+                                          <Badge variant={invItem.stock_on_hand > 10 ? "secondary" : invItem.stock_on_hand > 0 ? "default" : "destructive"}>
+                                            {invItem.stock_on_hand} {invItem.unit}
+                                          </Badge>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  ))}
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                          {item.inventory_id && (
+                            <div className="flex gap-2 mt-1">
+                              <Badge variant="outline" className="text-xs">
+                                {item.category}
+                              </Badge>
+                              {stockStatus && (
+                                <Badge variant={stockStatus.color as any} className="text-xs">
+                                  {stockStatus.text}: {item.stock_available} {item.usage_unit}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
 
-            <div className="border-t pt-4">
-              <div className="flex justify-between text-lg font-semibold">
-                <span>Total:</span>
-                <span>${calculateTotal().toFixed(2)}</span>
+                        <div className="w-24">
+                          <Label className="text-xs">Quantity</Label>
+                          <Input
+                            type="number"
+                            value={item.quantity_ordered || ""}
+                            onChange={(e) => updateItemQuantity(index, parseFloat(e.target.value) || 0)}
+                            className="mt-1"
+                            disabled={!item.inventory_id}
+                          />
+                        </div>
+
+                        <div className="w-28">
+                          <Label className="text-xs">Price</Label>
+                          <Input
+                            type="number"
+                            value={item.item_price || ""}
+                            readOnly
+                            className="mt-1 bg-muted"
+                          />
+                        </div>
+
+                        <div className="w-32">
+                          <Label className="text-xs">Total</Label>
+                          <Input
+                            value={`$${(item.quantity_ordered * item.item_price).toFixed(2)}`}
+                            readOnly
+                            className="mt-1 bg-muted font-medium"
+                          />
+                        </div>
+
+                        <Button
+                          onClick={() => removeItem(index)}
+                          variant="ghost"
+                          size="sm"
+                          className="mt-5"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      {item.quantity_ordered > item.stock_available && item.inventory_id && (
+                        <div className="flex items-center gap-2 text-sm text-destructive">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span>Ordered quantity exceeds available stock by {item.quantity_ordered - item.stock_available}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {items.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+                    <PackageSearch className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No items added yet</p>
+                    <p className="text-sm">Click "Add Item" to select products from inventory</p>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button onClick={handleSubmit}>Create Order</Button>
+            {items.length > 0 && (
+              <div className="flex justify-end">
+                <div className="text-right">
+                  <div className="text-sm text-muted-foreground mb-1">Total</div>
+                  <div className="text-2xl font-bold">${calculateTotal().toFixed(2)}</div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end pt-4">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSubmit} disabled={!selectedCustomer || items.length === 0}>
+                Create Order
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -285,7 +489,10 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
       <CustomerDialog
         open={isCustomerDialogOpen}
         onOpenChange={setIsCustomerDialogOpen}
-        onSuccess={fetchCustomers}
+        onSuccess={() => {
+          fetchCustomers();
+          setIsCustomerDialogOpen(false);
+        }}
       />
     </>
   );
