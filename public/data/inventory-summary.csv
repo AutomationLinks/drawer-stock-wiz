@@ -1,0 +1,60 @@
+item_id,sku,item_name,category_id,category_name,is_combo_product,quantity_purchased,quantity_sold,quantity_ordered,quantity_demanded,quantity_available,quantity_available_for_sale,reorder_level,Status,unit
+3645827000001001034,,Bombas Junior socks,-1,Others,false,0.00,0.00,0.00,0.00,0.00,0.00,,active,pairs
+3645827000001001161,,Bombas L socks,-1,Others,false,1825.00,0.00,0.00,0.00,1825.00,1825.00,,active,pairs
+3645827000001001126,,Bombas M socks,-1,Others,false,4550.00,0.00,0.00,0.00,4550.00,4550.00,,active,pairs
+3645827000001001091,,Bombas S socks,-1,Others,false,1000.00,0.00,0.00,0.00,1000.00,1000.00,,active,pairs
+3645827000000075750,843629119162,Bombas socks,-1,Others,false,173008.00,155758.00,0.00,18195.00,17250.00,-945.00,,active,pairs
+3645827000001001023,,Bombas Toddler socks,-1,Others,false,0.00,0.00,0.00,0.00,0.00,0.00,,active,pairs
+3645827000001001196,,Bombas XL socks,-1,Others,false,5250.00,0.00,0.00,0.00,5250.00,5250.00,,active,pairs
+3645827000001001056,,Bombas XS Socks,-1,Others,false,500.00,0.00,0.00,0.00,500.00,500.00,,active,pairs
+3645827000001001045,,Bombas Youth socks,-1,Others,false,0.00,0.00,0.00,0.00,0.00,0.00,,active,pairs
+3645827000000080168,,boys socks-large,-1,Others,false,2071.00,1720.00,0.00,159.00,351.00,192.00,,active,pairs
+3645827000000080155,,boys socks-medium,-1,Others,false,1872.00,1144.00,0.00,225.00,728.00,503.00,,active,pairs
+3645827000000075275,,boys socks-small,-1,Others,false,1630.00,1581.00,10.00,276.00,49.00,-227.00,,active,pairs
+3645827000000080177,,boys socks-toddler,-1,Others,false,351.00,163.00,0.00,108.00,188.00,80.00,,active,pairs
+3645827000000160035,,boys underwear-2XL,-1,Others,false,261.00,240.00,0.00,75.00,21.00,-54.00,,active,pairs
+3645827000000075429,,boys underwear-large,-1,Others,false,2785.00,2604.00,0.00,549.00,181.00,-368.00,,active,pairs
+3645827000000075427,,boys underwear-medium,-1,Others,false,3868.00,3595.00,20.00,447.00,273.00,-174.00,,active,pairs
+3645827000000075425,,boys underwear-small,-1,Others,false,4692.00,4692.00,0.00,432.00,0.00,-432.00,,active,pairs
+3645827000000075423,,boys underwear-toddler,-1,Others,false,2144.00,1986.00,0.00,441.00,158.00,-283.00,,active,pairs
+3645827000000075431,,boys underwear-XL,-1,Others,false,2776.00,2596.00,0.00,354.00,180.00,-174.00,,active,pairs
+3645827000000081210,,girls socks-large,-1,Others,false,1709.00,1327.00,0.00,165.00,382.00,217.00,,active,pairs
+3645827000000081185,,girls socks-medium,-1,Others,false,2232.00,1174.00,0.00,249.00,1058.00,809.00,,active,pairs
+3645827000000080202,,girls socks-small,-1,Others,false,982.00,875.00,0.00,137.00,107.00,-30.00,,active,pairs
+3645827000000075295,,girls socks-toddler,-1,Others,false,662.00,285.00,0.00,180.00,377.00,197.00,,active,pairs
+3645827000000075473,,girls underwear-large,-1,Others,false,4205.00,3181.00,0.00,513.00,1024.00,511.00,,active,pairs
+3645827000000075471,,girls underwear-medium,-1,Others,false,4194.00,3433.00,0.00,570.00,761.00,191.00,,active,pairs
+3645827000000075469,,girls underwear-small,-1,Others,false,4131.00,3293.00,0.00,549.00,838.00,289.00,,active,pairs
+3645827000000080089,,girls underwear-toddler,-1,Others,false,1957.00,1547.00,0.00,567.00,410.00,-157.00,,active,pairs
+3645827000000080069,,girls underwear-XL,-1,Others,false,1724.00,1422.00,0.00,258.00,302.00,44.00,,active,pairs
+3645827000000606032,,Mens Bombas UW - XS/S,-1,Others,false,4600.00,0.00,0.00,0.00,4600.00,4600.00,,active,pairs
+3645827000000606063,,Mens Bombas UW M/L,-1,Others,false,7077.00,0.00,0.00,0.00,7077.00,7077.00,,active,pairs
+3645827000000606094,,Mens Bombas UW XL/2XL,-1,Others,false,7200.00,0.00,0.00,0.00,7200.00,7200.00,,active,pairs
+3645827000000075175,,mens socks,-1,Others,false,13374.00,12288.00,0.00,1027.00,1086.00,59.00,,active,pairs
+3645827000000243751,,mens tees and tanks - 2XL,-1,Others,false,54.00,10.00,0.00,0.00,44.00,44.00,,active,each
+3645827000000243776,,mens tees and tanks - 3XL,-1,Others,false,54.00,0.00,0.00,0.00,54.00,54.00,,active,each
+3645827000000243697,,mens tees and tanks - large,-1,Others,false,159.00,10.00,0.00,0.00,149.00,149.00,,active,each
+3645827000000243670,,mens tees and tanks - medium,-1,Others,false,6071.00,836.00,0.00,0.00,5235.00,5235.00,,active,each
+3645827000000243643,,mens tees and tanks - small,-1,Others,false,1091.00,10.00,0.00,0.00,1081.00,1081.00,,active,each
+3645827000000243724,,mens tees and tanks - XL,-1,Others,false,4646.00,276.00,0.00,0.00,4370.00,4370.00,,active,each
+3645827000000075387,,mens underwear-2XL,-1,Others,false,2212.00,2212.00,0.00,258.00,0.00,-258.00,,active,pairs
+3645827000000080114,,mens underwear-3XL,-1,Others,false,1592.00,1512.00,0.00,264.00,80.00,-184.00,,active,pairs
+3645827000000080123,,mens underwear-4XL/5XL,-1,Others,false,532.00,524.00,0.00,36.00,8.00,-28.00,,active,pairs
+3645827000000075383,,mens underwear-large,-1,Others,false,5497.00,5383.00,0.00,457.00,114.00,-343.00,,active,pairs
+3645827000000075381,,mens underwear-medium,-1,Others,false,14397.00,5299.00,0.00,576.00,9098.00,8522.00,,active,pairs
+3645827000000075379,,mens underwear-small,-1,Others,false,9622.00,4401.00,0.00,447.00,5221.00,4774.00,,active,pairs
+3645827000000075385,,mens underwear-XL,-1,Others,false,15407.00,6479.00,0.00,549.00,8928.00,8379.00,,active,pairs
+3645827000000529493,,Womens Bombas UW - XS/S,-1,Others,false,2660.00,0.00,0.00,0.00,2660.00,2660.00,,active,pairs
+3645827000000529548,,Womens Bombas UW M/L,-1,Others,false,6892.00,0.00,0.00,0.00,6892.00,6892.00,,active,pairs
+3645827000000606001,,Womens Bombas UW XL/2XL,-1,Others,false,6677.00,0.00,0.00,0.00,6677.00,6677.00,,active,pairs
+3645827000000075235,,womens socks,-1,Others,false,12160.00,11074.00,0.00,963.00,1086.00,123.00,,active,pairs
+3645827000000456038,,womens tees and tanks - medium,-1,Others,false,4500.00,350.00,0.00,0.00,4150.00,4150.00,,active,each
+3645827000000456029,,womens tees and tanks - small,-1,Others,false,2500.00,0.00,0.00,0.00,2500.00,2500.00,,active,each
+3645827000000456047,,womens tees and tanks - XL,-1,Others,false,4500.00,50.00,0.00,0.00,4450.00,4450.00,,active,each
+3645827000000075325,,womens underwear-2-3XL,-1,Others,false,6975.00,6062.00,0.00,930.00,913.00,-17.00,,active,pairs
+3645827000000086186,,womens underwear-4XL-5XL,-1,Others,false,1233.00,1115.00,0.00,315.00,118.00,-197.00,,active,pairs
+3645827000000075319,,womens underwear-large,-1,Others,false,6964.00,6500.00,0.00,984.00,464.00,-520.00,,active,pairs
+3645827000000075317,,womens underwear-medium,-1,Others,false,17517.00,8729.00,0.00,1149.00,8788.00,7639.00,,active,pairs
+3645827000000075315,,womens underwear-small,-1,Others,false,15770.00,15638.00,0.00,1149.00,132.00,-1017.00,,active,pairs
+3645827000000080210,,womens underwear-XL,-1,Others,false,16089.00,7039.00,0.00,1173.00,9050.00,7877.00,,active,pairs
+3645827000000369001,,womens underwear-XS,-1,Others,false,61.00,0.00,0.00,0.00,61.00,61.00,,active,pairs
