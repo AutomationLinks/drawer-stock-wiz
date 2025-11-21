@@ -73,9 +73,10 @@ const PaymentForm = ({
 
     setIsProcessing(true);
 
-    const { error } = await stripe.confirmPayment({
+    const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
-      redirect: 'if_required',
+      confirmParams: {},
+      redirect: "if_required",
     });
 
     if (error) {
@@ -85,12 +86,19 @@ const PaymentForm = ({
         variant: "destructive",
       });
       setIsProcessing(false);
-    } else {
+    } else if (paymentIntent && paymentIntent.status === "succeeded") {
       toast({
         title: "Thank You!",
         description: "Your donation has been processed successfully.",
       });
       onSuccess();
+    } else {
+      toast({
+        title: "Payment Incomplete",
+        description: "Your payment could not be completed. Please try again.",
+        variant: "destructive",
+      });
+      setIsProcessing(false);
     }
   };
 
