@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.notify-zapier-donation]
+verify_jwt = false
+
+[functions.notify-zapier-volunteer]
+verify_jwt = false
