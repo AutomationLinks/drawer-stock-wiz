@@ -1,5 +1,4 @@
 import { Card } from "@/components/ui/card";
-import { VolunteerSchedule } from "@/components/VolunteerSchedule";
 import { VolunteerSignupForm } from "@/components/VolunteerSignupForm";
 import { DonationCounter } from "@/components/DonationCounter";
 import { Header } from "@/components/Header";
@@ -8,49 +7,39 @@ const Signup = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 max-w-3xl">
         <DonationCounter />
         
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            Drawer Knob Volunteer Events
+            Volunteer With Us
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Join us in making a difference! Sign up for upcoming volunteer sessions and help our community.
+          <p className="text-xl text-muted-foreground">
+            Join us in making a difference! Sign up for an upcoming volunteer session.
           </p>
         </div>
 
-        {/* Event Information */}
-        <Card className="mb-8 p-6">
-          <h2 className="text-2xl font-semibold mb-4">📅 Event Schedule Overview</h2>
-          
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
+        {/* Simplified Event Information */}
+        <Card className="mb-8 p-8 text-lg">
+          <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-semibold mb-2">🕙 Standard Time Slots</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li>Mondays → 10:00 AM – 12:00 PM</li>
-                <li>Thursdays → 5:00 PM – 6:30 PM</li>
-              </ul>
+              <p className="font-semibold text-xl mb-2">📍 Location</p>
+              <p className="text-muted-foreground">501 Highway 13 East, Suite 575, Burnsville MN 55337</p>
             </div>
             
             <div>
-              <h3 className="text-lg font-semibold mb-2">📍 Location</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li><strong>Burnsville:</strong> 501 Highway 13 East, Suite 575, Burnsville MN 55337</li>
-              </ul>
+              <p className="font-semibold text-xl mb-2">🕙 Time Slots</p>
+              <p className="text-muted-foreground">Mondays: 10:00 AM – 12:00 PM</p>
+              <p className="text-muted-foreground">Thursdays: 5:00 PM – 6:30 PM</p>
+            </div>
+            
+            <div>
+              <p className="font-semibold text-xl mb-2">👥 Group Size</p>
+              <p className="text-muted-foreground">Up to 10 volunteers per session</p>
             </div>
           </div>
-          
-          <div className="bg-muted p-4 rounded-lg">
-            <p className="text-sm">
-              👥 <strong>Capacity:</strong> 10 volunteers per session
-            </p>
-          </div>
         </Card>
-
-        {/* Event Schedule Table */}
-        <VolunteerSchedule />
 
         {/* Signup Form */}
         <VolunteerSignupForm />

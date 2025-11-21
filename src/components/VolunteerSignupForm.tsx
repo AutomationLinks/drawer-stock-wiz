@@ -33,6 +33,7 @@ export const VolunteerSignupForm = () => {
       const { data, error } = await supabase
         .from("volunteer_events")
         .select("*")
+        .gte("event_date", "2025-10-01")
         .lt("slots_filled", 10)
         .order("event_date", { ascending: true });
 
@@ -109,112 +110,103 @@ export const VolunteerSignupForm = () => {
   const selectedEvent = events?.find((e) => e.id === selectedEventId);
 
   return (
-    <Card className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">✍️ Sign Up to Volunteer</h2>
-      <p className="text-muted-foreground mb-6">
-        Choose your preferred date and location below. Each session holds up to 10 volunteers.
-      </p>
+    <Card className="p-8">
+      <div className="mb-8 text-center">
+        <h2 className="text-3xl font-bold mb-3">Sign Up to Volunteer</h2>
+        <p className="text-lg text-muted-foreground">
+          Complete the form below to reserve your spot
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Event Selection */}
-        <div className="space-y-2">
-          <Label htmlFor="event">Select Your Volunteer Date *</Label>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Step 1: Event Selection */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-lg">
+              1
+            </div>
+            <Label htmlFor="event" className="text-xl font-semibold">Choose Your Date</Label>
+          </div>
           <Select value={selectedEventId} onValueChange={setSelectedEventId}>
-            <SelectTrigger id="event">
-              <SelectValue placeholder="Choose a date" />
+            <SelectTrigger id="event" className="h-14 text-lg">
+              <SelectValue placeholder="Select a date and time" />
             </SelectTrigger>
             <SelectContent>
-              {events?.map((event) => (
-                <SelectItem key={event.id} value={event.id}>
-                  {format(new Date(event.event_date), "MMM dd, yyyy")} - {event.time_slot} ({event.location}) - {10 - event.slots_filled} spots left
-                </SelectItem>
-              ))}
+              {events?.map((event) => {
+                const spotsLeft = event.capacity - event.slots_filled;
+                return (
+                  <SelectItem key={event.id} value={event.id} className="text-base py-3">
+                    {format(new Date(event.event_date), "MMM dd, yy")} at {event.time_slot} ({spotsLeft} {spotsLeft === 1 ? 'spot' : 'spots'} left)
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
 
         {/* Show selected event details */}
         {selectedEvent && (
-          <div className="bg-muted p-4 rounded-lg space-y-1">
-            <p><strong>Location:</strong> {selectedEvent.location_address}</p>
-            <p><strong>Time:</strong> {selectedEvent.time_slot}</p>
-            <p><strong>Available Spots:</strong> {selectedEvent.capacity - selectedEvent.slots_filled} / {selectedEvent.capacity}</p>
+          <div className="bg-green-50 dark:bg-green-950 border-2 border-green-200 dark:border-green-800 p-6 rounded-lg space-y-2">
+            <p className="text-lg"><strong>✓ You selected:</strong></p>
+            <p className="text-base"><strong>Date:</strong> {format(new Date(selectedEvent.event_date), "MMMM dd, yyyy")}</p>
+            <p className="text-base"><strong>Time:</strong> {selectedEvent.time_slot}</p>
+            <p className="text-base"><strong>Location:</strong> {selectedEvent.location_address}</p>
+            <p className="text-base"><strong>Available Spots:</strong> {selectedEvent.capacity - selectedEvent.slots_filled} / {selectedEvent.capacity}</p>
           </div>
         )}
 
-        {/* Quantity */}
-        <div className="space-y-2">
-          <Label htmlFor="quantity">Number of Participants (1-10) *</Label>
-          <Select value={quantity} onValueChange={setQuantity}>
-            <SelectTrigger id="quantity">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                <SelectItem key={num} value={num.toString()}>
-                  {num}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Personal Information */}
+        {/* Step 2: Personal Information */}
         <div className="space-y-4">
-          <h3 className="font-semibold">Your Information</h3>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-lg">
+              2
+            </div>
+            <h3 className="text-xl font-semibold">Your Information</h3>
+          </div>
           
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName">First Name *</Label>
+              <Label htmlFor="firstName" className="text-base">First Name *</Label>
               <Input
                 id="firstName"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
+                className="h-12 text-lg"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name *</Label>
+              <Label htmlFor="lastName" className="text-base">Last Name *</Label>
               <Input
                 id="lastName"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
+                className="h-12 text-lg"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
+            <Label htmlFor="email" className="text-base">Email *</Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="comment">Who are you volunteering with? (Optional)</Label>
-            <Textarea
-              id="comment"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Enter any additional information..."
-              rows={3}
+              className="h-12 text-lg"
             />
           </div>
         </div>
 
         <Button 
           type="submit" 
-          className="w-full bg-[#69bf1f] hover:bg-[#5aa619]"
-          size="lg"
+          className="w-full h-16 text-xl font-bold bg-accent hover:bg-accent/90"
           disabled={signupMutation.isPending}
         >
-          {signupMutation.isPending ? "Signing Up..." : "Sign Me Up"}
+          {signupMutation.isPending ? "Signing Up..." : "Complete Sign Up →"}
         </Button>
       </form>
     </Card>
