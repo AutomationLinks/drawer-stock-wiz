@@ -21,7 +21,7 @@ export const VolunteerSchedule = () => {
       const { data, error } = await supabase
         .from("volunteer_events")
         .select("*")
-        .gte("event_date", today)
+        .gte("event_date", "2025-10-01")
         .neq("location", "Eagan")
         .order("event_date", { ascending: true });
 
@@ -87,7 +87,7 @@ export const VolunteerSchedule = () => {
                     return (
                       <TableRow key={event.id}>
                         <TableCell className="font-medium">
-                          {format(new Date(event.event_date), "MM/dd")}
+                          {format(new Date(event.event_date), "MM/dd/yy")}
                         </TableCell>
                         <TableCell>
                           {remaining} of {event.capacity} left
