@@ -1,9 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { loadStripe } from "@stripe/stripe-js";
-import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,92 +35,9 @@ const donationSchema = z.object({
 
 type DonationFormData = z.infer<typeof donationSchema>;
 
-// Initialize Stripe with publishable key (dynamic based on test mode)
-const getStripePromise = () => {
-  const searchParams = new URLSearchParams(window.location.search);
-  const isTestMode = searchParams.get('test') === 'true';
-  
-  const publishableKey = isTestMode 
-    ? 'pk_test_51SFJjtKmxAajjU1WrVZAALOyCOWoURN0halw7hxdPPgVcsTPDavemvPD5LcK4CM6rQVvCeJKj9rqwDwDG7rM8wqL00Sz8QWMq6'
-    : 'pk_live_51SFJjtKmxAajjU1WN6uwAjy1FcS4b0glE8Jwb8BcrLy6yvr5QFlgELNY9DQIytkZyeDrC7rNWR2fr0sCkipaG57900Hr3gEdNo';
-  
-  return loadStripe(publishableKey);
-};
-
-const stripePromise = getStripePromise();
-
-// Payment Form Component
-const PaymentForm = ({ 
-  clientSecret, 
-  onSuccess 
-}: { 
-  clientSecret: string; 
-  onSuccess: () => void;
-}) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const { toast } = useToast();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!stripe || !elements) {
-      return;
-    }
-
-    setIsProcessing(true);
-
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {},
-      redirect: "if_required",
-    });
-
-    if (error) {
-      toast({
-        title: "Payment Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      setIsProcessing(false);
-    } else if (paymentIntent && paymentIntent.status === "succeeded") {
-      toast({
-        title: "Thank You!",
-        description: "Your donation has been processed successfully.",
-      });
-      onSuccess();
-    } else {
-      toast({
-        title: "Payment Incomplete",
-        description: "Your payment could not be completed. Please try again.",
-        variant: "destructive",
-      });
-      setIsProcessing(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement />
-      <Button type="submit" disabled={!stripe || isProcessing} className="w-full">
-        {isProcessing ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Processing...
-          </>
-        ) : (
-          'Complete Donation'
-        )}
-      </Button>
-    </form>
-  );
-};
-
 export const DonationForm = () => {
   const [step, setStep] = useState(1);
   const [selectedAmount, setSelectedAmount] = useState<string>("50");
-  const [clientSecret, setClientSecret] = useState<string>("");
   const [isCreatingPayment, setIsCreatingPayment] = useState(false);
   const [couponDiscount, setCouponDiscount] = useState<number>(0);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
@@ -155,6 +70,51 @@ export const DonationForm = () => {
   const customAmount = watch("customAmount");
   const coverFee = watch("coverFee");
   const frequency = watch("frequency");
+
+  // Check if we're returning from successful Stripe Checkout
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const sessionId = searchParams.get('session_id');
+    
+    if (success === 'true') {
+      console.log('Returned from successful payment, session:', sessionId);
+      
+      // Try to load receipt data from localStorage
+      const storedReceipt = localStorage.getItem('pendingDonationReceipt');
+      if (storedReceipt) {
+        try {
+          const receiptInfo = JSON.parse(storedReceipt);
+          setReceiptData({
+            ...receiptInfo,
+            date: new Date().toISOString(),
+            transactionId: sessionId || "N/A",
+            paymentMethod: "Credit Card",
+          });
+          setShowReceipt(true);
+          setStep(4);
+          localStorage.removeItem('pendingDonationReceipt');
+          
+          toast({
+            title: "Thank You!",
+            description: "Your donation has been processed successfully.",
+          });
+        } catch (e) {
+          console.error('Error parsing receipt data:', e);
+        }
+      } else {
+        // If no stored data, just show success message
+        toast({
+          title: "Thank You!",
+          description: "Your donation has been processed successfully.",
+        });
+        setStep(4);
+      }
+      
+      // Clear the search params
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, []);
 
   const calculateProcessingFee = () => {
     const baseAmount = amount === "other" ? parseFloat(customAmount || "0") : parseFloat(amount);
@@ -255,8 +215,10 @@ export const DonationForm = () => {
     setIsCreatingPayment(true);
     
     try {
-      // Call edge function to create payment intent
-      const { data: paymentData, error } = await supabase.functions.invoke('create-payment-intent', {
+      console.log("Calling create-checkout-session function");
+      
+      // Call edge function to create checkout session
+      const { data: checkoutData, error } = await supabase.functions.invoke('create-checkout-session', {
         body: {
           name: data.name,
           email: data.email,
@@ -275,57 +237,44 @@ export const DonationForm = () => {
 
       if (error) throw error;
 
+      console.log("Checkout session response:", checkoutData);
+
       // Handle zero payment response
-      if (paymentData.type === 'zero_payment') {
-        setReceiptData({
-          ...data,
-          actualAmount,
-          processingFee,
-          discount: getDiscountAmount(),
-          total: "0.00",
-          date: new Date().toISOString(),
-          transactionId: "N/A (100% Discount Applied)",
-          paymentMethod: `Coupon Code${data.couponCode ? ' - ' + data.couponCode : ''}`,
-        });
-        setShowReceipt(true);
-        setStep(4);
-        
-        toast({
-          title: "Donation Processed!",
-          description: "Your donation has been fully covered by the coupon code.",
-        });
+      if (checkoutData.type === 'zero_payment') {
+        console.log("Zero payment - redirecting to success");
+        window.location.href = checkoutData.successUrl;
         return;
       }
 
-      setClientSecret(paymentData.clientSecret);
-      setStep(3); // Move to payment step
+      if (!checkoutData.url) {
+        console.error("No checkout URL in response:", checkoutData);
+        throw new Error("Failed to create checkout session");
+      }
+
+      // Store receipt data in localStorage before redirect
+      const receiptInfo = {
+        ...data,
+        actualAmount,
+        processingFee,
+        discount: getDiscountAmount(),
+        total: getTotalAmount(),
+      };
+      localStorage.setItem('pendingDonationReceipt', JSON.stringify(receiptInfo));
+
+      console.log("Redirecting to Stripe Checkout:", checkoutData.url);
+      
+      // Redirect to Stripe Checkout
+      window.location.href = checkoutData.url;
+      
     } catch (error: any) {
+      console.error("Payment submission error:", error);
+      setIsCreatingPayment(false);
       toast({
         title: "Error",
-        description: error.message || "Failed to create payment. Please try again.",
+        description: error.message || "Failed to process payment. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsCreatingPayment(false);
     }
-  };
-
-  const handlePaymentSuccess = () => {
-    const actualAmount = amount === "other" ? parseFloat(customAmount || "0") : parseFloat(amount);
-    const processingFee = coverFee ? parseFloat(calculateProcessingFee()) : 0;
-    
-    setReceiptData({
-      ...watch(),
-      actualAmount,
-      processingFee,
-      discount: getDiscountAmount(),
-      total: getTotalAmount(),
-      date: new Date().toISOString(),
-      transactionId: clientSecret.split('_secret_')[0] || "N/A",
-      paymentMethod: "Credit Card",
-    });
-    setShowReceipt(true);
-    setStep(4);
   };
 
   const handleNext = () => {
@@ -669,7 +618,7 @@ export const DonationForm = () => {
                 {isCreatingPayment ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {parseFloat(getTotalAmount()) === 0 ? 'Processing...' : 'Creating Payment...'}
+                    {parseFloat(getTotalAmount()) === 0 ? 'Processing...' : 'Redirecting to Stripe...'}
                   </>
                 ) : parseFloat(getTotalAmount()) === 0 ? (
                   'Complete Donation'
@@ -690,36 +639,7 @@ export const DonationForm = () => {
             </div>
           )}
 
-          {/* Step 3: Payment */}
-          {step === 3 && clientSecret && (
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
-              <div className="space-y-6">
-                <div className="text-center">
-                  <h3 className="text-2xl font-semibold mb-2">Complete Your Payment</h3>
-                  <p className="text-muted-foreground">
-                    Enter your payment details to complete your {frequency === "monthly" ? "monthly" : "one-time"} donation of ${getTotalAmount()}
-                  </p>
-                </div>
-                
-                <PaymentForm 
-                  clientSecret={clientSecret}
-                  onSuccess={handlePaymentSuccess}
-                />
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    setStep(2);
-                    setClientSecret("");
-                  }}
-                  className="w-full"
-                >
-                  Back to Information
-                </Button>
-              </div>
-            </Elements>
-          )}
+          {/* Step 3 is now handled by Stripe Checkout redirect - no UI needed */}
 
           {/* Step 4: Receipt */}
           {step === 4 && receiptData && (
@@ -729,7 +649,6 @@ export const DonationForm = () => {
                 reset();
                 setStep(1);
                 setSelectedAmount("50");
-                setClientSecret("");
                 setShowReceipt(false);
                 setReceiptData(null);
                 setCouponDiscount(0);
