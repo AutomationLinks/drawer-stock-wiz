@@ -263,8 +263,34 @@ export const DonationForm = () => {
 
       console.log("Redirecting to Stripe Checkout:", checkoutData.url);
       
-      // Redirect to Stripe Checkout
-      window.location.href = checkoutData.url;
+      // Open Stripe Checkout in new tab (more reliable than window.location.href)
+      const stripeWindow = window.open(checkoutData.url, '_blank');
+      
+      // Check if popup was blocked
+      if (!stripeWindow || stripeWindow.closed || typeof stripeWindow.closed === 'undefined') {
+        // Popup blocked - show message and fallback
+        setIsCreatingPayment(false);
+        toast({
+          title: "Please Allow Popups",
+          description: "Click OK to open the payment page.",
+          variant: "default",
+        });
+        
+        // Fallback to same-window redirect
+        const confirmation = confirm(
+          "Please allow popups for this site. Click OK to open the payment page."
+        );
+        if (confirmation) {
+          window.location.href = checkoutData.url;
+        }
+      } else {
+        // Successfully opened - reset loading state
+        setIsCreatingPayment(false);
+        toast({
+          title: "Redirected to Payment",
+          description: "Complete your donation in the new tab that just opened.",
+        });
+      }
       
     } catch (error: any) {
       console.error("Payment submission error:", error);
