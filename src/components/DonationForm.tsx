@@ -75,9 +75,6 @@ const PaymentForm = ({
 
     const { error } = await stripe.confirmPayment({
       elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/donate?success=true`,
-      },
       redirect: 'if_required',
     });
 
