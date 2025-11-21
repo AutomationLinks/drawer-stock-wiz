@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, ArrowRight, Heart, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { DonationReceipt } from "@/components/DonationReceipt";
 
 const formatCurrency = (amount: string | number) => {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -120,6 +121,8 @@ export const DonationForm = () => {
   const [isCreatingPayment, setIsCreatingPayment] = useState(false);
   const [couponDiscount, setCouponDiscount] = useState<number>(0);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [receiptData, setReceiptData] = useState<any>(null);
+  const [showReceipt, setShowReceipt] = useState(false);
   const { toast } = useToast();
 
   // Detect test mode from URL parameter
@@ -156,7 +159,22 @@ export const DonationForm = () => {
   const getTotalAmount = () => {
     const baseAmount = amount === "other" ? parseFloat(customAmount || "0") : parseFloat(amount);
     const fee = coverFee ? parseFloat(calculateProcessingFee()) : 0;
-    return (baseAmount + fee).toFixed(2);
+    const subtotal = baseAmount + fee;
+    
+    // Apply coupon discount (percentage)
+    const discountAmount = (subtotal * couponDiscount) / 100;
+    const finalTotal = Math.max(0, subtotal - discountAmount);
+    
+    return finalTotal.toFixed(2);
+  };
+
+  const getDiscountAmount = () => {
+    if (couponDiscount <= 0) return "0.00";
+    const baseAmount = amount === "other" ? parseFloat(customAmount || "0") : parseFloat(amount);
+    const fee = coverFee ? parseFloat(calculateProcessingFee()) : 0;
+    const subtotal = baseAmount + fee;
+    const discountAmount = (subtotal * couponDiscount) / 100;
+    return discountAmount.toFixed(2);
   };
 
   const validateCoupon = async () => {
@@ -203,13 +221,35 @@ export const DonationForm = () => {
   };
 
   const onSubmit = async (data: DonationFormData) => {
+    const actualAmount = amount === "other" ? parseFloat(customAmount || "0") : parseFloat(amount);
+    const totalAmount = parseFloat(getTotalAmount());
+    const processingFee = coverFee ? parseFloat(calculateProcessingFee()) : 0;
+    
+    // If total is $0 (100% coupon), skip Stripe and go to receipt
+    if (totalAmount === 0) {
+      setReceiptData({
+        ...data,
+        actualAmount,
+        processingFee,
+        discount: getDiscountAmount(),
+        total: "0.00",
+        date: new Date().toISOString(),
+        transactionId: "N/A (100% Discount Applied)",
+        paymentMethod: `Coupon Code${data.couponCode ? ' - ' + data.couponCode : ''}`,
+      });
+      setShowReceipt(true);
+      setStep(4);
+      
+      toast({
+        title: "Donation Processed!",
+        description: "Your donation has been fully covered by the coupon code.",
+      });
+      return;
+    }
+    
     setIsCreatingPayment(true);
     
     try {
-      const actualAmount = amount === "other" ? parseFloat(customAmount || "0") : parseFloat(amount);
-      const totalAmount = parseFloat(getTotalAmount());
-      const processingFee = coverFee ? parseFloat(calculateProcessingFee()) : 0;
-
       // Call edge function to create payment intent
       const { data: paymentData, error } = await supabase.functions.invoke('create-payment-intent', {
         body: {
@@ -230,6 +270,28 @@ export const DonationForm = () => {
 
       if (error) throw error;
 
+      // Handle zero payment response
+      if (paymentData.type === 'zero_payment') {
+        setReceiptData({
+          ...data,
+          actualAmount,
+          processingFee,
+          discount: getDiscountAmount(),
+          total: "0.00",
+          date: new Date().toISOString(),
+          transactionId: "N/A (100% Discount Applied)",
+          paymentMethod: `Coupon Code${data.couponCode ? ' - ' + data.couponCode : ''}`,
+        });
+        setShowReceipt(true);
+        setStep(4);
+        
+        toast({
+          title: "Donation Processed!",
+          description: "Your donation has been fully covered by the coupon code.",
+        });
+        return;
+      }
+
       setClientSecret(paymentData.clientSecret);
       setStep(3); // Move to payment step
     } catch (error: any) {
@@ -244,10 +306,21 @@ export const DonationForm = () => {
   };
 
   const handlePaymentSuccess = () => {
-    reset();
-    setStep(1);
-    setSelectedAmount("50");
-    setClientSecret("");
+    const actualAmount = amount === "other" ? parseFloat(customAmount || "0") : parseFloat(amount);
+    const processingFee = coverFee ? parseFloat(calculateProcessingFee()) : 0;
+    
+    setReceiptData({
+      ...watch(),
+      actualAmount,
+      processingFee,
+      discount: getDiscountAmount(),
+      total: getTotalAmount(),
+      date: new Date().toISOString(),
+      transactionId: clientSecret.split('_secret_')[0] || "N/A",
+      paymentMethod: "Credit Card",
+    });
+    setShowReceipt(true);
+    setStep(4);
   };
 
   const handleNext = () => {
@@ -419,8 +492,23 @@ export const DonationForm = () => {
               </div>
 
               {/* Total Amount Display */}
-              <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
-                <div className="flex justify-between items-center">
+              <div className="space-y-2 p-4 rounded-lg bg-primary/10 border border-primary/20">
+                <div className="flex justify-between text-sm">
+                  <span>Subtotal:</span>
+                  <span>
+                    ${formatCurrency(
+                      (amount === "other" ? parseFloat(customAmount || "0") : parseFloat(amount)) +
+                      (coverFee ? parseFloat(calculateProcessingFee()) : 0)
+                    )}
+                  </span>
+                </div>
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600 font-medium">
+                    <span>Discount ({couponDiscount}% off):</span>
+                    <span>-${formatCurrency(getDiscountAmount())}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center pt-2 border-t border-primary/30">
                   <span className="text-sm font-medium">Total Amount:</span>
                   <span className="text-2xl font-bold text-primary">
                     ${formatCurrency(getTotalAmount())}
@@ -428,6 +516,11 @@ export const DonationForm = () => {
                 </div>
                 {frequency === "monthly" && (
                   <p className="text-xs text-muted-foreground mt-1">per month</p>
+                )}
+                {parseFloat(getTotalAmount()) === 0 && (
+                  <p className="text-xs text-green-600 font-medium mt-1">
+                    ✓ Your donation is fully covered by coupon code!
+                  </p>
                 )}
               </div>
 
@@ -542,6 +635,12 @@ export const DonationForm = () => {
                     <span className="font-medium">${formatCurrency(calculateProcessingFee())}</span>
                   </div>
                 )}
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600 font-medium">
+                    <span>Discount ({couponDiscount}% off):</span>
+                    <span>-${formatCurrency(getDiscountAmount())}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm border-t border-border pt-2">
                   <span className="font-semibold">Total:</span>
                   <span className="font-bold text-primary">${formatCurrency(getTotalAmount())}</span>
@@ -549,6 +648,11 @@ export const DonationForm = () => {
                 <p className="text-xs text-muted-foreground">
                   {frequency === "monthly" ? "Recurring monthly" : "One-time donation"}
                 </p>
+                {parseFloat(getTotalAmount()) === 0 && (
+                  <p className="text-xs text-green-600 font-medium">
+                    ✓ Fully covered by coupon code!
+                  </p>
+                )}
               </div>
 
               <Button 
@@ -560,8 +664,10 @@ export const DonationForm = () => {
                 {isCreatingPayment ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Payment...
+                    {parseFloat(getTotalAmount()) === 0 ? 'Processing...' : 'Creating Payment...'}
                   </>
+                ) : parseFloat(getTotalAmount()) === 0 ? (
+                  'Complete Donation'
                 ) : (
                   'Proceed to Payment'
                 )}
@@ -608,6 +714,22 @@ export const DonationForm = () => {
                 </Button>
               </div>
             </Elements>
+          )}
+
+          {/* Step 4: Receipt */}
+          {step === 4 && receiptData && (
+            <DonationReceipt 
+              data={receiptData}
+              onNewDonation={() => {
+                reset();
+                setStep(1);
+                setSelectedAmount("50");
+                setClientSecret("");
+                setShowReceipt(false);
+                setReceiptData(null);
+                setCouponDiscount(0);
+              }}
+            />
           )}
         </form>
       </CardContent>

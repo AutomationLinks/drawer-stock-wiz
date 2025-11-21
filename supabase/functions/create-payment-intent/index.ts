@@ -40,7 +40,17 @@ serve(async (req) => {
 
     console.log('Processing payment:', { name, email, amount, frequency, campaign, mode: isTestMode ? 'TEST' : 'LIVE' });
 
-    console.log('Processing payment:', { name, email, amount, frequency, campaign });
+    // Handle $0 donations (100% coupon case)
+    if (totalAmount <= 0) {
+      console.log('Zero amount donation detected - skipping Stripe payment');
+      return new Response(JSON.stringify({
+        type: 'zero_payment',
+        message: 'Donation fully covered by coupon',
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
 
     // Create or retrieve Stripe customer
     let customer;
@@ -67,9 +77,9 @@ serve(async (req) => {
       // Create a subscription for monthly donations
       console.log('Creating monthly subscription');
       
-      // Create a price for this specific amount
+      // Create a price for this specific amount (minimum $0.50 for Stripe)
       const price = await stripe.prices.create({
-        unit_amount: Math.round(totalAmount * 100), // Convert to cents
+        unit_amount: Math.max(50, Math.round(totalAmount * 100)), // Convert to cents, minimum $0.50
         currency: 'usd',
         recurring: { interval: 'month' },
         product_data: {
@@ -111,7 +121,7 @@ serve(async (req) => {
       console.log('Creating one-time payment intent');
       
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(totalAmount * 100), // Convert to cents
+        amount: Math.max(50, Math.round(totalAmount * 100)), // Convert to cents, minimum $0.50
         currency: 'usd',
         customer: customer.id,
         metadata: {
