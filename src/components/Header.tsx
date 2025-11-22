@@ -22,6 +22,7 @@ export const Header = () => {
           <Link to="/invoices" className="text-foreground hover:text-primary transition-colors">Invoices</Link>
           <Link to="/partner-locations" className="text-foreground hover:text-primary transition-colors">Partners</Link>
           <Link to="/training-videos" className="text-foreground hover:text-primary transition-colors">Training</Link>
+          <Link to="/volunteer-signups" className="text-foreground hover:text-primary transition-colors">Volunteers</Link>
         </nav>
       </div>
     </header>
