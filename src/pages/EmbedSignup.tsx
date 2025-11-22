@@ -1,8 +1,20 @@
+import { useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { VolunteerSignupForm } from "@/components/VolunteerSignupForm";
 import { DonationCounter } from "@/components/DonationCounter";
 
 const EmbedSignup = () => {
+  useEffect(() => {
+    const observer = new ResizeObserver(() => {
+      const height = document.body.scrollHeight;
+      window.parent.postMessage({ type: "resize", height }, "*");
+    });
+
+    observer.observe(document.body);
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-3xl">

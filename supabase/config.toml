@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.notify-zapier-volunteer]
 verify_jwt = false
+
+[functions.send-volunteer-confirmation]
+verify_jwt = false

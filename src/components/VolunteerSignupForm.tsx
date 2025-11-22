@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -15,6 +14,8 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { CheckCircle2, Calendar, MapPin, Clock } from "lucide-react";
+import { generateCalendarFile, downloadCalendarFile } from "@/utils/generateCalendarFile";
 
 export const VolunteerSignupForm = () => {
   const { toast } = useToast();
@@ -25,7 +26,17 @@ export const VolunteerSignupForm = () => {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [quantity, setQuantity] = useState("1");
-  const [comment, setComment] = useState("");
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmedSignup, setConfirmedSignup] = useState<{
+    eventDate: string;
+    timeSlot: string;
+    location: string;
+    locationAddress: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    quantity: number;
+  } | null>(null);
 
   const { data: events } = useQuery({
     queryKey: ["volunteer-events-available"],
@@ -58,18 +69,20 @@ export const VolunteerSignupForm = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({
-        title: "Success!",
-        description: "Thank you for signing up! You'll receive a confirmation email shortly.",
-      });
-      
-      // Reset form
-      setSelectedEventId("");
-      setFirstName("");
-      setLastName("");
-      setEmail("");
-      setQuantity("1");
-      setComment("");
+      const event = events?.find((e) => e.id === selectedEventId);
+      if (event) {
+        setConfirmedSignup({
+          eventDate: event.event_date,
+          timeSlot: event.time_slot,
+          location: event.location,
+          locationAddress: event.location_address,
+          firstName,
+          lastName,
+          email,
+          quantity: parseInt(quantity),
+        });
+        setShowConfirmation(true);
+      }
       
       // Refetch events to update available slots
       queryClient.invalidateQueries({ queryKey: ["volunteer-events"] });
@@ -103,11 +116,121 @@ export const VolunteerSignupForm = () => {
       last_name: lastName,
       email: email,
       quantity: parseInt(quantity),
-      comment: comment || undefined,
     });
   };
 
   const selectedEvent = events?.find((e) => e.id === selectedEventId);
+
+  const handleAddToCalendar = () => {
+    if (!confirmedSignup) return;
+    
+    const icsContent = generateCalendarFile(
+      confirmedSignup.eventDate,
+      confirmedSignup.timeSlot,
+      confirmedSignup.location,
+      confirmedSignup.locationAddress,
+      confirmedSignup.email,
+      `${confirmedSignup.firstName} ${confirmedSignup.lastName}`
+    );
+    
+    downloadCalendarFile(icsContent);
+    
+    toast({
+      title: "Calendar File Downloaded",
+      description: "Open the file to add this event to your calendar.",
+    });
+  };
+
+  const handleSignUpAnother = () => {
+    setShowConfirmation(false);
+    setConfirmedSignup(null);
+    setSelectedEventId("");
+    setFirstName("");
+    setLastName("");
+    setEmail("");
+    setQuantity("1");
+  };
+
+  if (showConfirmation && confirmedSignup) {
+    return (
+      <Card className="p-8">
+        <div className="text-center space-y-6">
+          <div className="flex justify-center">
+            <div className="rounded-full bg-green-100 dark:bg-green-900 p-4">
+              <CheckCircle2 className="h-16 w-16 text-green-600 dark:text-green-400" />
+            </div>
+          </div>
+          
+          <div>
+            <h2 className="text-3xl font-bold mb-3">You're All Set!</h2>
+            <p className="text-lg text-muted-foreground">
+              Thank you for signing up to volunteer, {confirmedSignup.firstName}!
+            </p>
+          </div>
+
+          <Card className="p-6 bg-muted/50 text-left space-y-3">
+            <h3 className="text-xl font-semibold mb-4">Event Details</h3>
+            <div className="flex items-start gap-3">
+              <Calendar className="h-5 w-5 text-primary mt-0.5" />
+              <div>
+                <p className="font-medium">Date</p>
+                <p className="text-muted-foreground">
+                  {format(new Date(confirmedSignup.eventDate), "EEEE, MMMM dd, yyyy")}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Clock className="h-5 w-5 text-primary mt-0.5" />
+              <div>
+                <p className="font-medium">Time</p>
+                <p className="text-muted-foreground">{confirmedSignup.timeSlot}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <MapPin className="h-5 w-5 text-primary mt-0.5" />
+              <div>
+                <p className="font-medium">Location</p>
+                <p className="text-muted-foreground">
+                  {confirmedSignup.location}<br />
+                  {confirmedSignup.locationAddress}
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          <div className="bg-blue-50 dark:bg-blue-950 border-2 border-blue-200 dark:border-blue-800 p-4 rounded-lg">
+            <p className="text-sm font-medium">
+              📧 Check your email for a confirmation message with a calendar invite!
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <Button 
+              onClick={handleAddToCalendar}
+              size="lg"
+              className="w-full h-14 text-lg"
+            >
+              <Calendar className="h-5 w-5 mr-2" />
+              Add to My Calendar
+            </Button>
+            
+            <Button 
+              onClick={handleSignUpAnother}
+              variant="outline"
+              size="lg"
+              className="w-full h-14 text-lg"
+            >
+              Sign Up Another Person
+            </Button>
+          </div>
+
+          <p className="text-sm text-muted-foreground">
+            Please arrive 10 minutes early. Questions? Call us at 877-829-5500
+          </p>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-8">
