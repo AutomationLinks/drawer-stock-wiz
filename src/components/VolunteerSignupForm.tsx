@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { CheckCircle2, Calendar, MapPin, Clock } from "lucide-react";
+import { CheckCircle2, Calendar, MapPin, Clock, Download } from "lucide-react";
 import { generateCalendarFile, downloadCalendarFile } from "@/utils/generateCalendarFile";
+import { generateGoogleCalendarUrl, generateOutlookCalendarUrl } from "@/utils/calendarLinks";
 
 export const VolunteerSignupForm = () => {
   const { toast } = useToast();
@@ -121,7 +122,33 @@ export const VolunteerSignupForm = () => {
 
   const selectedEvent = events?.find((e) => e.id === selectedEventId);
 
-  const handleAddToCalendar = () => {
+  const handleAddToGoogleCalendar = () => {
+    if (!confirmedSignup) return;
+    
+    const url = generateGoogleCalendarUrl(
+      confirmedSignup.eventDate,
+      confirmedSignup.timeSlot,
+      confirmedSignup.location,
+      confirmedSignup.locationAddress
+    );
+    
+    window.open(url, '_blank');
+  };
+
+  const handleAddToOutlook = () => {
+    if (!confirmedSignup) return;
+    
+    const url = generateOutlookCalendarUrl(
+      confirmedSignup.eventDate,
+      confirmedSignup.timeSlot,
+      confirmedSignup.location,
+      confirmedSignup.locationAddress
+    );
+    
+    window.open(url, '_blank');
+  };
+
+  const handleDownloadICS = () => {
     if (!confirmedSignup) return;
     
     const icsContent = generateCalendarFile(
@@ -204,15 +231,37 @@ export const VolunteerSignupForm = () => {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3">
-            <Button 
-              onClick={handleAddToCalendar}
-              size="lg"
-              className="w-full h-14 text-lg"
-            >
-              <Calendar className="h-5 w-5 mr-2" />
-              Add to My Calendar
-            </Button>
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Button 
+                onClick={handleAddToGoogleCalendar}
+                size="lg"
+                className="h-14 text-base"
+              >
+                <Calendar className="h-5 w-5 mr-2" />
+                Google Calendar
+              </Button>
+              
+              <Button 
+                onClick={handleAddToOutlook}
+                size="lg"
+                variant="secondary"
+                className="h-14 text-base"
+              >
+                <Calendar className="h-5 w-5 mr-2" />
+                Outlook
+              </Button>
+              
+              <Button 
+                onClick={handleDownloadICS}
+                size="lg"
+                variant="outline"
+                className="h-14 text-base"
+              >
+                <Download className="h-5 w-5 mr-2" />
+                Download .ics
+              </Button>
+            </div>
             
             <Button 
               onClick={handleSignUpAnother}
