@@ -147,16 +147,22 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
       return;
     }
 
-    // Generate order number
-    const { data: lastOrder } = await supabase
+    // Generate order number - find the actual highest order number
+    const { data: orders } = await supabase
       .from("sales_orders")
-      .select("sales_order_number")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+      .select("sales_order_number");
 
-    const lastNumber = lastOrder ? parseInt(lastOrder.sales_order_number.split("-")[1]) : 0;
-    const newOrderNumber = `SO-${String(lastNumber + 1).padStart(5, "0")}`;
+    let maxNumber = 0;
+    if (orders) {
+      orders.forEach(order => {
+        const match = order.sales_order_number.match(/SO-(\d+)/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNumber) maxNumber = num;
+        }
+      });
+    }
+    const newOrderNumber = `SO-${String(maxNumber + 1).padStart(5, "0")}`;
 
     const total = calculateTotal();
 
