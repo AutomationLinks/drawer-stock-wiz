@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { CheckCircle2, Calendar, MapPin, Clock, Download } from "lucide-react";
 import { generateCalendarFile, downloadCalendarFile } from "@/utils/generateCalendarFile";
 import { generateGoogleCalendarUrl, generateOutlookCalendarUrl } from "@/utils/calendarLinks";
@@ -202,7 +202,7 @@ export const VolunteerSignupForm = () => {
               <div>
                 <p className="font-medium">Date</p>
                 <p className="text-muted-foreground">
-                  {format(new Date(confirmedSignup.eventDate), "EEEE, MMMM dd, yyyy")}
+                  {format(parseISO(confirmedSignup.eventDate), "EEEE, MMMM dd, yyyy")}
                 </p>
               </div>
             </div>
@@ -308,7 +308,7 @@ export const VolunteerSignupForm = () => {
                 const spotsLeft = event.capacity - event.slots_filled;
                 return (
                   <SelectItem key={event.id} value={event.id} className="text-base py-3">
-                    {format(new Date(event.event_date), "MMM dd, yy")} at {event.time_slot} ({spotsLeft} {spotsLeft === 1 ? 'spot' : 'spots'} left)
+                    {format(parseISO(event.event_date), "MMM dd, yy")} at {event.time_slot} ({spotsLeft} {spotsLeft === 1 ? 'spot' : 'spots'} left)
                   </SelectItem>
                 );
               })}
@@ -320,7 +320,7 @@ export const VolunteerSignupForm = () => {
         {selectedEvent && (
           <div className="bg-green-50 dark:bg-green-950 border-2 border-green-200 dark:border-green-800 p-6 rounded-lg space-y-2">
             <p className="text-lg"><strong>✓ You selected:</strong></p>
-            <p className="text-base"><strong>Date:</strong> {format(new Date(selectedEvent.event_date), "MMMM dd, yyyy")}</p>
+            <p className="text-base"><strong>Date:</strong> {format(parseISO(selectedEvent.event_date), "MMMM dd, yyyy")}</p>
             <p className="text-base"><strong>Time:</strong> {selectedEvent.time_slot}</p>
             <p className="text-base"><strong>Location:</strong> {selectedEvent.location_address}</p>
             <p className="text-base"><strong>Available Spots:</strong> {selectedEvent.capacity - selectedEvent.slots_filled} / {selectedEvent.capacity}</p>

@@ -14,6 +14,7 @@ import Invoices from "./pages/Invoices";
 import PartnerLocations from "./pages/PartnerLocations";
 import TrainingVideos from "./pages/TrainingVideos";
 import VolunteerSignups from "./pages/VolunteerSignups";
+import VolunteerEvents from "./pages/VolunteerEvents";
 import EmbedDonate from "./pages/EmbedDonate";
 import EmbedInventory from "./pages/EmbedInventory";
 import EmbedSignup from "./pages/EmbedSignup";
@@ -42,6 +43,7 @@ const AppContent = () => {
       <Route path="/partner-locations" element={<PartnerLocations />} />
       <Route path="/training-videos" element={<TrainingVideos />} />
       <Route path="/volunteer-signups" element={<VolunteerSignups />} />
+      <Route path="/volunteer-events" element={<VolunteerEvents />} />
       <Route path="/embed/donate" element={<EmbedDonate />} />
       <Route path="/embed/inventory" element={<EmbedInventory />} />
       <Route path="/embed/signup" element={<EmbedSignup />} />
