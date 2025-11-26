@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { InvoiceTemplate } from "./InvoiceTemplate";
-import { Printer, Package } from "lucide-react";
+import { EditSalesOrderDialog } from "./EditSalesOrderDialog";
+import { Printer, Package, Edit } from "lucide-react";
 
 interface SalesOrderDetailDialogProps {
   orderId: string;
@@ -43,6 +44,7 @@ interface OrderWithDetails {
 export const SalesOrderDetailDialog = ({ orderId, open, onOpenChange, onSuccess }: SalesOrderDetailDialogProps) => {
   const [order, setOrder] = useState<OrderWithDetails | null>(null);
   const [showInvoice, setShowInvoice] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -91,6 +93,11 @@ export const SalesOrderDetailDialog = ({ orderId, open, onOpenChange, onSuccess 
   if (showInvoice) {
     return <InvoiceTemplate order={order} onClose={() => setShowInvoice(false)} />;
   }
+
+  const handleEditSuccess = () => {
+    fetchOrderDetails();
+    onSuccess();
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -175,6 +182,12 @@ export const SalesOrderDetailDialog = ({ orderId, open, onOpenChange, onSuccess 
           </div>
 
           <div className="flex justify-end gap-2">
+            {order.shipment_status !== "fulfilled" && (
+              <Button variant="outline" onClick={() => setShowEditDialog(true)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit Order
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setShowInvoice(true)}>
               <Printer className="mr-2 h-4 w-4" />
               View Invoice
@@ -183,6 +196,13 @@ export const SalesOrderDetailDialog = ({ orderId, open, onOpenChange, onSuccess 
           </div>
         </div>
       </DialogContent>
+
+      <EditSalesOrderDialog
+        orderId={orderId}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onSuccess={handleEditSuccess}
+      />
     </Dialog>
   );
 };
