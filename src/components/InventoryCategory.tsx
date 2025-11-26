@@ -8,10 +8,9 @@ interface InventoryItem {
   item_name: string;
   category: string;
   status: string;
-  unit: string;
-  opening_stock: number;
   stock_on_hand: number;
   item_type: string;
+  price_per_unit?: number;
 }
 
 interface InventoryCategoryProps {
@@ -57,13 +56,13 @@ export const InventoryCategory = ({ category, items, onUpdate }: InventoryCatego
                   Item Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Unit
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Opening Stock
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Stock on Hand
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Stock Value Per Pair
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Total Value
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Actions

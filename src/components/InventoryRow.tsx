@@ -21,8 +21,6 @@ interface InventoryItem {
   item_name: string;
   category: string;
   status: string;
-  unit: string;
-  opening_stock: number;
   stock_on_hand: number;
   item_type: string;
   price_per_unit?: number;
@@ -35,8 +33,10 @@ interface InventoryRowProps {
 }
 
 export const InventoryRow = ({ item, isEven, onUpdate }: InventoryRowProps) => {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingStock, setIsEditingStock] = useState(false);
+  const [isEditingPrice, setIsEditingPrice] = useState(false);
   const [stockValue, setStockValue] = useState(item.stock_on_hand.toString());
+  const [priceValue, setPriceValue] = useState((item.price_per_unit || 2.00).toString());
   const { toast } = useToast();
 
   const updateStock = async (newStock: number) => {
@@ -70,11 +70,11 @@ export const InventoryRow = ({ item, isEven, onUpdate }: InventoryRowProps) => {
     }
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveStockEdit = () => {
     const newValue = parseInt(stockValue);
     if (!isNaN(newValue) && newValue >= 0) {
       updateStock(newValue);
-      setIsEditing(false);
+      setIsEditingStock(false);
     } else {
       toast({
         title: "Invalid value",
@@ -84,9 +84,49 @@ export const InventoryRow = ({ item, isEven, onUpdate }: InventoryRowProps) => {
     }
   };
 
-  const handleCancelEdit = () => {
+  const handleCancelStockEdit = () => {
     setStockValue(item.stock_on_hand.toString());
-    setIsEditing(false);
+    setIsEditingStock(false);
+  };
+
+  const updatePrice = async (newPrice: number) => {
+    const { error } = await supabase
+      .from('inventory')
+      .update({ price_per_unit: newPrice })
+      .eq('id', item.id);
+
+    if (error) {
+      toast({
+        title: "Error updating price",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Price updated",
+        description: `${item.item_name} price updated successfully`,
+      });
+      onUpdate();
+    }
+  };
+
+  const handleSavePriceEdit = () => {
+    const newValue = parseFloat(priceValue);
+    if (!isNaN(newValue) && newValue >= 0) {
+      updatePrice(newValue);
+      setIsEditingPrice(false);
+    } else {
+      toast({
+        title: "Invalid value",
+        description: "Please enter a valid price",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelPriceEdit = () => {
+    setPriceValue((item.price_per_unit || 2.00).toString());
+    setIsEditingPrice(false);
   };
 
   const handleDelete = async () => {
@@ -117,18 +157,9 @@ export const InventoryRow = ({ item, isEven, onUpdate }: InventoryRowProps) => {
     <tr className={isEven ? "bg-card" : "bg-muted/30"}>
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="text-sm font-medium text-foreground">{item.item_name}</div>
-        <div className="text-xs text-muted-foreground">
-          ${pricePerUnit.toFixed(2)} per {item.unit} • Value: ${totalValue.toLocaleString()}
-        </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-muted-foreground">{item.unit}</div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-muted-foreground">{Number(item.opening_stock).toLocaleString()}</div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        {isEditing ? (
+        {isEditingStock ? (
           <div className="flex items-center gap-2">
             <Input
               type="number"
@@ -137,10 +168,10 @@ export const InventoryRow = ({ item, isEven, onUpdate }: InventoryRowProps) => {
               className="w-24"
               min="0"
             />
-            <Button size="sm" onClick={handleSaveEdit} className="bg-success hover:bg-success/90">
+            <Button size="sm" onClick={handleSaveStockEdit} className="bg-success hover:bg-success/90">
               <Check className="h-4 w-4" />
             </Button>
-            <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+            <Button size="sm" variant="outline" onClick={handleCancelStockEdit}>
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -165,19 +196,59 @@ export const InventoryRow = ({ item, isEven, onUpdate }: InventoryRowProps) => {
             >
               <Plus className="h-4 w-4" />
             </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setIsEditingStock(true)}
+              className="h-8 w-8 p-0"
+            >
+              <Edit2 className="h-4 w-4" />
+            </Button>
           </div>
         )}
       </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        {isEditingPrice ? (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">$</span>
+            <Input
+              type="number"
+              value={priceValue}
+              onChange={(e) => setPriceValue(e.target.value)}
+              className="w-24"
+              min="0"
+              step="0.01"
+            />
+            <Button size="sm" onClick={handleSavePriceEdit} className="bg-success hover:bg-success/90">
+              <Check className="h-4 w-4" />
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleCancelPriceEdit}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground">
+              ${pricePerUnit.toFixed(2)}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setIsEditingPrice(true)}
+              className="h-8 w-8 p-0"
+            >
+              <Edit2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="text-sm font-semibold text-foreground">
+          ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </div>
+      </td>
       <td className="px-6 py-4 whitespace-nowrap text-right">
         <div className="flex items-center justify-end gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setIsEditing(!isEditing)}
-            className="h-8 w-8 p-0"
-          >
-            <Edit2 className="h-4 w-4" />
-          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-destructive hover:text-destructive">

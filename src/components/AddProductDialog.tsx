@@ -22,8 +22,6 @@ interface AddProductDialogProps {
 export const AddProductDialog = ({ open, onOpenChange, onSuccess }: AddProductDialogProps) => {
   const [itemName, setItemName] = useState("");
   const [category, setCategory] = useState("");
-  const [unit, setUnit] = useState("pairs");
-  const [openingStock, setOpeningStock] = useState("0");
   const [stockOnHand, setStockOnHand] = useState("0");
   const [price, setPrice] = useState(2.00);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,8 +45,6 @@ export const AddProductDialog = ({ open, onOpenChange, onSuccess }: AddProductDi
       .insert({
         item_name: itemName,
         category: category,
-        unit: unit,
-        opening_stock: parseFloat(openingStock),
         stock_on_hand: parseFloat(stockOnHand),
         status: 'Active',
         item_type: 'Inventory',
@@ -71,8 +67,6 @@ export const AddProductDialog = ({ open, onOpenChange, onSuccess }: AddProductDi
       // Reset form
       setItemName("");
       setCategory("");
-      setUnit("pairs");
-      setOpeningStock("0");
       setStockOnHand("0");
       setPrice(2.00);
       onOpenChange(false);
@@ -112,26 +106,6 @@ export const AddProductDialog = ({ open, onOpenChange, onSuccess }: AddProductDi
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="unit">Unit</Label>
-              <Input
-                id="unit"
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
-                placeholder="pairs"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="openingStock">Opening Stock</Label>
-              <Input
-                id="openingStock"
-                type="number"
-                value={openingStock}
-                onChange={(e) => setOpeningStock(e.target.value)}
-                min="0"
-                step="1"
-              />
-            </div>
-            <div className="grid gap-2">
               <Label htmlFor="stockOnHand">Stock on Hand *</Label>
               <Input
                 id="stockOnHand"
@@ -144,7 +118,7 @@ export const AddProductDialog = ({ open, onOpenChange, onSuccess }: AddProductDi
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="price">Price Per Unit *</Label>
+              <Label htmlFor="price">Stock Value Per Pair *</Label>
               <Input
                 id="price"
                 type="number"
