@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Download, Search, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -67,7 +67,7 @@ const VolunteerSignups = () => {
 
     if (dateFilter === "all") return matchesSearch;
 
-    const eventDate = new Date(signup.volunteer_events.event_date);
+    const eventDate = parseISO(signup.volunteer_events.event_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -105,7 +105,7 @@ const VolunteerSignups = () => {
       signup.first_name,
       signup.last_name,
       signup.email,
-      format(new Date(signup.volunteer_events.event_date), "MM/dd/yyyy"),
+      format(parseISO(signup.volunteer_events.event_date), "MM/dd/yyyy"),
       signup.volunteer_events.time_slot,
       signup.volunteer_events.location,
       signup.volunteer_events.location_address,
@@ -224,7 +224,7 @@ const VolunteerSignups = () => {
                       <TableCell>{signup.email}</TableCell>
                       <TableCell>
                         {format(
-                          new Date(signup.volunteer_events.event_date),
+                          parseISO(signup.volunteer_events.event_date),
                           "MMM dd, yyyy"
                         )}
                       </TableCell>

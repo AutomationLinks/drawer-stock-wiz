@@ -16,8 +16,9 @@ export function generateCalendarFile(
     if (period === "PM" && hours !== 12) hours += 12;
     if (period === "AM" && hours === 12) hours = 0;
     
-    const dateObj = new Date(date);
-    dateObj.setHours(hours, minutes, 0, 0);
+    // Parse the date as local date to avoid timezone shifts
+    const [year, month, day] = date.split('-').map(Number);
+    const dateObj = new Date(year, month - 1, day, hours, minutes, 0, 0);
     
     // Format as YYYYMMDDTHHMMSS
     return dateObj.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";

@@ -14,8 +14,9 @@ const formatDateForGoogle = (dateStr: string, timeStr: string): string => {
   if (period === "PM" && hours !== 12) hours += 12;
   if (period === "AM" && hours === 12) hours = 0;
   
-  const date = new Date(dateStr);
-  date.setHours(hours, minutes, 0, 0);
+  // Parse the date as local date to avoid timezone shifts
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day, hours, minutes, 0, 0);
   
   // Format as YYYYMMDDTHHmmssZ
   return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
@@ -33,8 +34,9 @@ const formatDateForOutlook = (dateStr: string, timeStr: string): string => {
   if (period === "PM" && hours !== 12) hours += 12;
   if (period === "AM" && hours === 12) hours = 0;
   
-  const date = new Date(dateStr);
-  date.setHours(hours, minutes, 0, 0);
+  // Parse the date as local date to avoid timezone shifts
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day, hours, minutes, 0, 0);
   
   return date.toISOString();
 };
@@ -50,8 +52,9 @@ const getEndTime = (dateStr: string, timeStr: string): { google: string; outlook
   if (period === "PM" && hours !== 12) hours += 12;
   if (period === "AM" && hours === 12) hours = 0;
   
-  const date = new Date(dateStr);
-  date.setHours(hours, minutes, 0, 0);
+  // Parse the date as local date to avoid timezone shifts
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day, hours, minutes, 0, 0);
   
   return {
     google: date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z",

@@ -793,6 +793,8 @@ export type Database = {
           capacity: number
           created_at: string
           event_date: string
+          event_name: string | null
+          event_type: string
           id: string
           location: string
           location_address: string
@@ -804,6 +806,8 @@ export type Database = {
           capacity?: number
           created_at?: string
           event_date: string
+          event_name?: string | null
+          event_type?: string
           id?: string
           location: string
           location_address: string
@@ -815,6 +819,8 @@ export type Database = {
           capacity?: number
           created_at?: string
           event_date?: string
+          event_name?: string | null
+          event_type?: string
           id?: string
           location?: string
           location_address?: string
