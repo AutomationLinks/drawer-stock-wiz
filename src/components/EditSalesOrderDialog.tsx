@@ -150,6 +150,12 @@ export const EditSalesOrderDialog = ({ orderId, open, onOpenChange, onSuccess }:
     setItems(newItems);
   };
 
+  const updateItemPrice = (index: number, price: number) => {
+    const newItems = [...items];
+    newItems[index].item_price = price;
+    setItems(newItems);
+  };
+
   const calculateTotal = () => {
     return items.reduce((sum, item) => sum + (item.quantity_ordered * item.item_price), 0);
   };
@@ -383,6 +389,17 @@ export const EditSalesOrderDialog = ({ orderId, open, onOpenChange, onSuccess }:
                           value={item.quantity_ordered}
                           onChange={(e) => updateItemQuantity(index, Number(e.target.value))}
                           min="0"
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="text-xs">Price</Label>
+                        <Input
+                          type="number"
+                          value={item.item_price}
+                          onChange={(e) => updateItemPrice(index, Number(e.target.value))}
+                          min="0"
+                          step="0.01"
                         />
                       </div>
                     </div>
