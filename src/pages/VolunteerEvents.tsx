@@ -71,6 +71,9 @@ const VolunteerEvents = () => {
     capacity: "10",
     event_type: "regular",
     event_name: "",
+    requires_payment: false,
+    ticket_price: "",
+    ticket_purchase_url: "",
   });
 
   const { data: events, isLoading } = useQuery({
@@ -98,6 +101,9 @@ const VolunteerEvents = () => {
           capacity: parseInt(data.capacity),
           event_type: data.event_type,
           event_name: data.event_name || null,
+          requires_payment: data.requires_payment,
+          ticket_price: data.requires_payment && data.ticket_price ? parseFloat(data.ticket_price) : null,
+          ticket_purchase_url: data.requires_payment ? data.ticket_purchase_url : null,
         });
 
       if (error) throw error;
@@ -133,6 +139,9 @@ const VolunteerEvents = () => {
           capacity: parseInt(data.capacity),
           event_type: data.event_type,
           event_name: data.event_name || null,
+          requires_payment: data.requires_payment,
+          ticket_price: data.requires_payment && data.ticket_price ? parseFloat(data.ticket_price) : null,
+          ticket_purchase_url: data.requires_payment ? data.ticket_purchase_url : null,
         })
         .eq("id", data.id);
 
@@ -194,6 +203,9 @@ const VolunteerEvents = () => {
       capacity: "10",
       event_type: "regular",
       event_name: "",
+      requires_payment: false,
+      ticket_price: "",
+      ticket_purchase_url: "",
     });
   };
 
@@ -208,6 +220,9 @@ const VolunteerEvents = () => {
         capacity: event.capacity.toString(),
         event_type: event.event_type,
         event_name: event.event_name || "",
+        requires_payment: (event as any).requires_payment || false,
+        ticket_price: (event as any).ticket_price?.toString() || "",
+        ticket_purchase_url: (event as any).ticket_purchase_url || "",
       });
     } else {
       setEditingEvent(null);
@@ -425,6 +440,50 @@ const VolunteerEvents = () => {
                 />
               </div>
             )}
+
+            <div className="space-y-4 border-t pt-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="requires_payment"
+                  checked={formData.requires_payment}
+                  onChange={(e) => setFormData({ ...formData, requires_payment: e.target.checked })}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="requires_payment" className="cursor-pointer">
+                  This event requires a ticket purchase
+                </Label>
+              </div>
+
+              {formData.requires_payment && (
+                <div className="grid grid-cols-2 gap-4 pl-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="ticket_price">Ticket Price ($) *</Label>
+                    <Input
+                      id="ticket_price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="25.00"
+                      value={formData.ticket_price}
+                      onChange={(e) => setFormData({ ...formData, ticket_price: e.target.value })}
+                      required={formData.requires_payment}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ticket_purchase_url">Stripe Payment Link *</Label>
+                    <Input
+                      id="ticket_purchase_url"
+                      type="url"
+                      placeholder="https://buy.stripe.com/..."
+                      value={formData.ticket_purchase_url}
+                      onChange={(e) => setFormData({ ...formData, ticket_purchase_url: e.target.value })}
+                      required={formData.requires_payment}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
 
             <DialogFooter>
               <Button

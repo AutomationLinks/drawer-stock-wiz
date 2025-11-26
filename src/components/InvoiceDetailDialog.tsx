@@ -2,11 +2,22 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Printer, Mail, CheckCircle, Trash2 } from "lucide-react";
+import { Printer, Mail, CheckCircle, Trash2, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { InvoiceTemplate } from "./InvoiceTemplate";
+import { EditInvoiceDialog } from "./EditInvoiceDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface InvoiceDetailDialogProps {
   open: boolean;
@@ -22,6 +33,8 @@ export const InvoiceDetailDialog = ({
   onUpdate,
 }: InvoiceDetailDialogProps) => {
   const [showPrintView, setShowPrintView] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const handlePrint = () => {
     setShowPrintView(true);
@@ -47,19 +60,21 @@ export const InvoiceDetailDialog = ({
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this invoice?")) return;
+    try {
+      const { error } = await supabase
+        .from("invoices")
+        .delete()
+        .eq("id", invoice.id);
 
-    const { error } = await supabase
-      .from("invoices")
-      .delete()
-      .eq("id", invoice.id);
+      if (error) throw error;
 
-    if (error) {
-      toast.error("Failed to delete invoice");
-    } else {
       toast.success("Invoice deleted successfully");
       onUpdate();
       onOpenChange(false);
+      setShowDeleteDialog(false);
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      toast.error("Failed to delete invoice");
     }
   };
 
@@ -94,7 +109,8 @@ export const InvoiceDetailDialog = ({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -160,10 +176,24 @@ export const InvoiceDetailDialog = ({
           <div className="flex justify-between items-center pt-4 border-t">
             <div className="flex gap-2">
               {invoice.status === "draft" && (
-                <Button variant="destructive" onClick={handleDelete} size="sm">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowEditDialog(true)}
+                    size="sm"
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setShowDeleteDialog(true)}
+                    size="sm"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                </>
               )}
             </div>
             <div className="flex gap-2">
@@ -188,5 +218,36 @@ export const InvoiceDetailDialog = ({
         </div>
       </DialogContent>
     </Dialog>
+
+    <EditInvoiceDialog
+      open={showEditDialog}
+      onOpenChange={setShowEditDialog}
+      invoice={invoice}
+      onSuccess={() => {
+        setShowEditDialog(false);
+        onUpdate();
+      }}
+    />
+
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will permanently delete this invoice. This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDelete}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Delete Invoice
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };

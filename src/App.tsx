@@ -15,6 +15,8 @@ import PartnerLocations from "./pages/PartnerLocations";
 import TrainingVideos from "./pages/TrainingVideos";
 import VolunteerSignups from "./pages/VolunteerSignups";
 import VolunteerEvents from "./pages/VolunteerEvents";
+import IncomingDonations from "./pages/IncomingDonations";
+import Events from "./pages/Events";
 import EmbedDonate from "./pages/EmbedDonate";
 import EmbedInventory from "./pages/EmbedInventory";
 import EmbedSignup from "./pages/EmbedSignup";
@@ -41,9 +43,11 @@ const AppContent = () => {
       <Route path="/sales-orders" element={<SalesOrders />} />
       <Route path="/invoices" element={<Invoices />} />
       <Route path="/partner-locations" element={<PartnerLocations />} />
-      <Route path="/training-videos" element={<TrainingVideos />} />
-      <Route path="/volunteer-signups" element={<VolunteerSignups />} />
-      <Route path="/volunteer-events" element={<VolunteerEvents />} />
+        <Route path="/training-videos" element={<TrainingVideos />} />
+        <Route path="/volunteer-signups" element={<VolunteerSignups />} />
+        <Route path="/volunteer-events" element={<VolunteerEvents />} />
+        <Route path="/incoming-donations" element={<IncomingDonations />} />
+        <Route path="/events" element={<Events />} />
       <Route path="/embed/donate" element={<EmbedDonate />} />
       <Route path="/embed/inventory" element={<EmbedInventory />} />
       <Route path="/embed/signup" element={<EmbedSignup />} />

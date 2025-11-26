@@ -284,6 +284,80 @@ export type Database = {
         }
         Relationships: []
       }
+      incoming_donation_items: {
+        Row: {
+          created_at: string | null
+          donation_id: string | null
+          id: string
+          inventory_id: string | null
+          item_name: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string | null
+          donation_id?: string | null
+          id?: string
+          inventory_id?: string | null
+          item_name: string
+          quantity?: number
+        }
+        Update: {
+          created_at?: string | null
+          donation_id?: string | null
+          id?: string
+          inventory_id?: string | null
+          item_name?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incoming_donation_items_donation_id_fkey"
+            columns: ["donation_id"]
+            isOneToOne: false
+            referencedRelation: "incoming_donations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incoming_donation_items_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "inventory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incoming_donations: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          donation_date: string
+          id: string
+          notes: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          donation_date?: string
+          id?: string
+          notes?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          donation_date?: string
+          id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incoming_donations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory: {
         Row: {
           category: string
@@ -798,7 +872,10 @@ export type Database = {
           id: string
           location: string
           location_address: string
+          requires_payment: boolean | null
           slots_filled: number
+          ticket_price: number | null
+          ticket_purchase_url: string | null
           time_slot: string
           updated_at: string
         }
@@ -811,7 +888,10 @@ export type Database = {
           id?: string
           location: string
           location_address: string
+          requires_payment?: boolean | null
           slots_filled?: number
+          ticket_price?: number | null
+          ticket_purchase_url?: string | null
           time_slot: string
           updated_at?: string
         }
@@ -824,7 +904,10 @@ export type Database = {
           id?: string
           location?: string
           location_address?: string
+          requires_payment?: boolean | null
           slots_filled?: number
+          ticket_price?: number | null
+          ticket_purchase_url?: string | null
           time_slot?: string
           updated_at?: string
         }
