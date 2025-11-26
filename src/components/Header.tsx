@@ -20,10 +20,12 @@ export const Header = () => {
           <Link to="/companies" className="text-foreground hover:text-primary transition-colors">Companies</Link>
           <Link to="/sales-orders" className="text-foreground hover:text-primary transition-colors">Sales Orders</Link>
           <Link to="/invoices" className="text-foreground hover:text-primary transition-colors">Invoices</Link>
+          <Link to="/incoming-donations" className="text-foreground hover:text-primary transition-colors">Incoming</Link>
           <Link to="/partner-locations" className="text-foreground hover:text-primary transition-colors">Partners</Link>
           <Link to="/training-videos" className="text-foreground hover:text-primary transition-colors">Training</Link>
-          <Link to="/volunteer-signups" className="text-foreground hover:text-primary transition-colors">Volunteers</Link>
-          <Link to="/volunteer-events" className="text-foreground hover:text-primary transition-colors">Events</Link>
+          <Link to="/volunteer-signups" className="text-foreground hover:text-primary transition-colors">Signups</Link>
+          <Link to="/volunteer-events" className="text-foreground hover:text-primary transition-colors">Admin Events</Link>
+          <Link to="/events" className="text-foreground hover:text-primary transition-colors">Events</Link>
         </nav>
       </div>
     </header>

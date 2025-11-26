@@ -14,11 +14,16 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
-import { CheckCircle2, Calendar, MapPin, Clock, Download } from "lucide-react";
+import { CheckCircle2, Calendar, MapPin, Clock, Download, ExternalLink } from "lucide-react";
 import { generateCalendarFile, downloadCalendarFile } from "@/utils/generateCalendarFile";
 import { generateGoogleCalendarUrl, generateOutlookCalendarUrl } from "@/utils/calendarLinks";
 
-export const VolunteerSignupForm = () => {
+interface VolunteerSignupFormProps {
+  onSuccess?: () => void;
+  showOnlyEventType?: "regular" | "event";
+}
+
+export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerSignupFormProps = {}) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -40,14 +45,19 @@ export const VolunteerSignupForm = () => {
   } | null>(null);
 
   const { data: events } = useQuery({
-    queryKey: ["volunteer-events-available"],
+    queryKey: ["volunteer-events-available", showOnlyEventType],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("volunteer_events")
         .select("*")
         .gte("event_date", "2025-10-01")
-        .lt("slots_filled", 10)
-        .order("event_date", { ascending: true });
+        .lt("slots_filled", 10);
+      
+      if (showOnlyEventType) {
+        query = query.eq("event_type", showOnlyEventType);
+      }
+      
+      const { data, error } = await query.order("event_date", { ascending: true });
 
       if (error) throw error;
       return data;
@@ -263,11 +273,27 @@ export const VolunteerSignupForm = () => {
               </Button>
             </div>
             
+            {selectedEvent && (selectedEvent as any).requires_payment && (selectedEvent as any).ticket_purchase_url && (
+              <div className="mt-4 p-4 border-2 border-primary rounded-lg bg-primary/5">
+                <h4 className="font-semibold text-lg mb-2">Complete Your Registration</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  This event requires a ticket purchase of ${(selectedEvent as any).ticket_price} to confirm your registration.
+                </p>
+                <Button
+                  className="w-full h-12"
+                  onClick={() => window.open((selectedEvent as any).ticket_purchase_url, '_blank')}
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Purchase Ticket (${(selectedEvent as any).ticket_price})
+                </Button>
+              </div>
+            )}
+            
             <Button 
               onClick={handleSignUpAnother}
               variant="outline"
               size="lg"
-              className="w-full h-14 text-lg"
+              className="w-full h-14 text-lg mt-4"
             >
               Sign Up Another Person
             </Button>
