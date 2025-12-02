@@ -175,25 +175,37 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
       return;
     }
 
+    // Insert items with quantity_fulfilled: 0 first
     const orderItems = items.map(item => ({
       sales_order_id: order.id,
       inventory_id: item.inventory_id,
       item_name: item.item_name,
       quantity_ordered: item.quantity_ordered,
-      quantity_fulfilled: item.quantity_ordered,
+      quantity_fulfilled: 0, // Start at 0 so the UPDATE trigger fires
       item_price: item.item_price,
       item_total: item.quantity_ordered * item.item_price,
       usage_unit: item.usage_unit,
     }));
 
-    const { error: itemsError } = await supabase.from("sales_order_items").insert(orderItems);
+    const { data: insertedItems, error: itemsError } = await supabase
+      .from("sales_order_items")
+      .insert(orderItems)
+      .select("id, quantity_ordered");
 
     if (itemsError) {
       toast({ title: "Error adding items", description: itemsError.message, variant: "destructive" });
       return;
     }
 
-    toast({ title: "Success", description: `Sales order ${newOrderNumber} created - inventory will be added when fulfilled` });
+    // Now UPDATE each item to set quantity_fulfilled - this triggers the inventory addition
+    for (const insertedItem of insertedItems || []) {
+      await supabase
+        .from("sales_order_items")
+        .update({ quantity_fulfilled: insertedItem.quantity_ordered })
+        .eq("id", insertedItem.id);
+    }
+
+    toast({ title: "Success", description: `Sales order ${newOrderNumber} created - inventory has been added` });
     resetForm();
     onSuccess();
     onOpenChange(false);
