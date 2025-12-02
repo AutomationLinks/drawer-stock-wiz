@@ -83,7 +83,7 @@ export const SalesOrderDetailDialog = ({ orderId, open, onOpenChange, onSuccess 
       return;
     }
 
-    toast({ title: "Success", description: "Item marked as fulfilled" });
+    toast({ title: "Success", description: "Item received - inventory updated" });
     fetchOrderDetails();
     onSuccess();
   };
@@ -160,7 +160,7 @@ export const SalesOrderDetailDialog = ({ orderId, open, onOpenChange, onSuccess 
                           onClick={() => handleFulfillItem(item.id, item.quantity_ordered)}
                         >
                           <Package className="mr-2 h-4 w-4" />
-                          Fulfill
+                          Receive
                         </Button>
                       )}
                     </TableCell>

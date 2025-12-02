@@ -119,11 +119,9 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
     return items.reduce((sum, item) => sum + (item.quantity_ordered * item.item_price), 0);
   };
 
-  const getStockStatus = (ordered: number, available: number) => {
-    if (available === 0) return { color: "destructive", text: "Out of Stock" };
-    if (ordered > available) return { color: "destructive", text: "Exceeds Stock" };
+  const getStockStatus = (available: number) => {
     if (available < 10) return { color: "default", text: "Low Stock" };
-    return { color: "secondary", text: "In Stock" };
+    return { color: "secondary", text: "Current Stock" };
   };
 
   const handleSubmit = async () => {
@@ -132,17 +130,6 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
         title: "Error", 
         description: "Please select a customer and add at least one item from inventory", 
         variant: "destructive" 
-      });
-      return;
-    }
-
-    // Check for stock issues
-    const stockIssues = items.filter(item => item.quantity_ordered > item.stock_available);
-    if (stockIssues.length > 0) {
-      toast({
-        title: "Stock Warning",
-        description: `${stockIssues.length} item(s) exceed available stock. Please adjust quantities.`,
-        variant: "destructive",
       });
       return;
     }
@@ -206,7 +193,7 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
       return;
     }
 
-    toast({ title: "Success", description: `Sales order ${newOrderNumber} created successfully` });
+    toast({ title: "Success", description: `Sales order ${newOrderNumber} created - inventory will be added when fulfilled` });
     resetForm();
     onSuccess();
     onOpenChange(false);
@@ -343,7 +330,7 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
 
               <div className="space-y-3">
                 {items.map((item, index) => {
-                  const stockStatus = item.inventory_id ? getStockStatus(item.quantity_ordered, item.stock_available) : null;
+                  const stockStatus = item.inventory_id ? getStockStatus(item.stock_available) : null;
                   
                   return (
                     <div key={index} className="border rounded-lg p-4 space-y-3">
