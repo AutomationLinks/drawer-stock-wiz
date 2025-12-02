@@ -2,10 +2,8 @@ import { Card } from "@/components/ui/card";
 import { VolunteerSignupForm } from "@/components/VolunteerSignupForm";
 import { DonationCounter } from "@/components/DonationCounter";
 import { Header } from "@/components/Header";
-
 const Signup = () => {
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         <DonationCounter />
@@ -25,7 +23,7 @@ const Signup = () => {
           <div className="space-y-4">
             <div>
               <p className="font-semibold text-xl mb-2">📍 Location</p>
-              <p className="text-muted-foreground">501 Highway 13 East, Suite 575, Burnsville MN 55337</p>
+              <p className="text-muted-foreground">500 Highway 13 East, Suite 575, Burnsville MN 55337</p>
             </div>
             
             <div>
@@ -44,8 +42,6 @@ const Signup = () => {
         {/* Signup Form */}
         <VolunteerSignupForm />
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Signup;
