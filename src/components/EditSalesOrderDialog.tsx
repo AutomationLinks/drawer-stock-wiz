@@ -162,13 +162,7 @@ export const EditSalesOrderDialog = ({ orderId, open, onOpenChange, onSuccess }:
 
   const getStockStatus = (item: OrderItem) => {
     if (!item.stock_on_hand) return { text: "", color: "" };
-    const available = item.stock_on_hand;
-    const ordered = item.quantity_ordered;
-    
-    if (ordered > available) {
-      return { text: `⚠️ Only ${available} available`, color: "text-destructive" };
-    }
-    return { text: `${available} available`, color: "text-muted-foreground" };
+    return { text: `Current stock: ${item.stock_on_hand}`, color: "text-muted-foreground" };
   };
 
   const groupedInventory = inventory.reduce((acc, item) => {
