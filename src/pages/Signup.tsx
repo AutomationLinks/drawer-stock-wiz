@@ -67,26 +67,28 @@ const Signup = () => {
           )}
         </div>
 
-        {/* Simplified Event Information */}
-        <Card className="mb-8 p-8 text-lg">
-          <div className="space-y-4">
-            <div>
-              <p className="font-semibold text-xl mb-2">📍 Location</p>
-              <p className="text-muted-foreground">500 E Travelers Trail Suite 575 Burnsville, MN 55337</p>
+        {/* Simplified Event Information - only show for regular/all */}
+        {(filterType === "all" || filterType === "regular") && (
+          <Card className="mb-8 p-8 text-lg">
+            <div className="space-y-4">
+              <div>
+                <p className="font-semibold text-xl mb-2">📍 Location</p>
+                <p className="text-muted-foreground">500 E Travelers Trail Suite 575 Burnsville, MN 55337</p>
+              </div>
+              
+              <div>
+                <p className="font-semibold text-xl mb-2">🕙 Time Slots</p>
+                <p className="text-muted-foreground">Mondays: 10:00 AM – 12:00 PM</p>
+                <p className="text-muted-foreground">Thursdays: 5:00 PM – 6:30 PM</p>
+              </div>
+              
+              <div>
+                <p className="font-semibold text-xl mb-2">👥 Group Size</p>
+                <p className="text-muted-foreground">Up to 10 volunteers per session</p>
+              </div>
             </div>
-            
-            <div>
-              <p className="font-semibold text-xl mb-2">🕙 Time Slots</p>
-              <p className="text-muted-foreground">Mondays: 10:00 AM – 12:00 PM</p>
-              <p className="text-muted-foreground">Thursdays: 5:00 PM – 6:30 PM</p>
-            </div>
-            
-            <div>
-              <p className="font-semibold text-xl mb-2">👥 Group Size</p>
-              <p className="text-muted-foreground">Up to 10 volunteers per session</p>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        )}
 
         {/* Signup Form */}
         <VolunteerSignupForm filterType={filterType} />
