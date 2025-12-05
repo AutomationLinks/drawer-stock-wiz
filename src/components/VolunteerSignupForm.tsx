@@ -14,13 +14,18 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
-import { CheckCircle2, Calendar, MapPin, Clock, Download, ExternalLink } from "lucide-react";
+import { CheckCircle2, Calendar, MapPin, Clock, Download, ExternalLink, Users } from "lucide-react";
 import { generateCalendarFile, downloadCalendarFile } from "@/utils/generateCalendarFile";
 import { generateGoogleCalendarUrl, generateOutlookCalendarUrl } from "@/utils/calendarLinks";
 
 interface VolunteerSignupFormProps {
   onSuccess?: () => void;
   showOnlyEventType?: "regular" | "event";
+}
+
+interface Attendee {
+  firstName: string;
+  lastName: string;
 }
 
 export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerSignupFormProps = {}) => {
@@ -31,7 +36,8 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerS
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [quantity, setQuantity] = useState("1");
+  const [quantity, setQuantity] = useState(1);
+  const [additionalAttendees, setAdditionalAttendees] = useState<Attendee[]>([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedSignup, setConfirmedSignup] = useState<{
     eventDate: string;
@@ -42,6 +48,7 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerS
     lastName: string;
     email: string;
     quantity: number;
+    attendees: Attendee[];
   } | null>(null);
 
   const { data: events } = useQuery({
@@ -72,12 +79,40 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerS
       email: string;
       quantity: number;
       comment?: string;
+      attendees: Attendee[];
     }) => {
-      const { error } = await supabase
+      // Insert main signup
+      const { data: signup, error: signupError } = await supabase
         .from("volunteer_signups")
-        .insert(signupData);
+        .insert({
+          event_id: signupData.event_id,
+          first_name: signupData.first_name,
+          last_name: signupData.last_name,
+          email: signupData.email,
+          quantity: signupData.quantity,
+          comment: signupData.comment,
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (signupError) throw signupError;
+
+      // Insert additional attendees if any
+      if (signupData.attendees.length > 0) {
+        const attendeesData = signupData.attendees.map(att => ({
+          signup_id: signup.id,
+          first_name: att.firstName,
+          last_name: att.lastName,
+        }));
+
+        const { error: attendeesError } = await supabase
+          .from("volunteer_signup_attendees")
+          .insert(attendeesData);
+
+        if (attendeesError) throw attendeesError;
+      }
+
+      return signup;
     },
     onSuccess: () => {
       const event = events?.find((e) => e.id === selectedEventId);
@@ -90,12 +125,12 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerS
           firstName,
           lastName,
           email,
-          quantity: parseInt(quantity),
+          quantity,
+          attendees: additionalAttendees,
         });
         setShowConfirmation(true);
       }
       
-      // Refetch events to update available slots
       queryClient.invalidateQueries({ queryKey: ["volunteer-events"] });
       queryClient.invalidateQueries({ queryKey: ["volunteer-events-available"] });
     },
@@ -109,6 +144,29 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerS
     },
   });
 
+  const handleQuantityChange = (newQuantity: number) => {
+    setQuantity(newQuantity);
+    // Adjust attendees array to match quantity - 1 (excluding primary person)
+    const additionalCount = newQuantity - 1;
+    if (additionalCount > additionalAttendees.length) {
+      // Add empty attendee slots
+      const newAttendees = [...additionalAttendees];
+      for (let i = additionalAttendees.length; i < additionalCount; i++) {
+        newAttendees.push({ firstName: "", lastName: "" });
+      }
+      setAdditionalAttendees(newAttendees);
+    } else if (additionalCount < additionalAttendees.length) {
+      // Remove extra attendee slots
+      setAdditionalAttendees(additionalAttendees.slice(0, additionalCount));
+    }
+  };
+
+  const updateAttendee = (index: number, field: "firstName" | "lastName", value: string) => {
+    const updated = [...additionalAttendees];
+    updated[index] = { ...updated[index], [field]: value };
+    setAdditionalAttendees(updated);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -121,16 +179,31 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerS
       return;
     }
 
+    // Validate additional attendees have names
+    if (quantity > 1) {
+      const missingNames = additionalAttendees.some(att => !att.firstName || !att.lastName);
+      if (missingNames) {
+        toast({
+          title: "Missing Attendee Names",
+          description: "Please provide names for all people in your group.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     signupMutation.mutate({
       event_id: selectedEventId,
       first_name: firstName,
       last_name: lastName,
       email: email,
-      quantity: parseInt(quantity),
+      quantity: quantity,
+      attendees: additionalAttendees,
     });
   };
 
   const selectedEvent = events?.find((e) => e.id === selectedEventId);
+  const availableSpots = selectedEvent ? selectedEvent.capacity - selectedEvent.slots_filled : 0;
 
   const handleAddToGoogleCalendar = () => {
     if (!confirmedSignup) return;
@@ -185,7 +258,8 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerS
     setFirstName("");
     setLastName("");
     setEmail("");
-    setQuantity("1");
+    setQuantity(1);
+    setAdditionalAttendees([]);
   };
 
   if (showConfirmation && confirmedSignup) {
@@ -202,6 +276,9 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerS
             <h2 className="text-3xl font-bold mb-3">You're All Set!</h2>
             <p className="text-lg text-muted-foreground">
               Thank you for signing up to volunteer, {confirmedSignup.firstName}!
+              {confirmedSignup.quantity > 1 && (
+                <span> Your group of {confirmedSignup.quantity} is confirmed.</span>
+              )}
             </p>
           </div>
 
@@ -233,6 +310,20 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerS
                 </p>
               </div>
             </div>
+            {confirmedSignup.quantity > 1 && (
+              <div className="flex items-start gap-3">
+                <Users className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <p className="font-medium">Your Group ({confirmedSignup.quantity} people)</p>
+                  <ul className="text-muted-foreground list-disc list-inside">
+                    <li>{confirmedSignup.firstName} {confirmedSignup.lastName} (you)</li>
+                    {confirmedSignup.attendees.map((att, i) => (
+                      <li key={i}>{att.firstName} {att.lastName}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
           </Card>
 
           <div className="bg-blue-50 dark:bg-blue-950 border-2 border-blue-200 dark:border-blue-800 p-4 rounded-lg">
@@ -349,7 +440,7 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerS
             <p className="text-base"><strong>Date:</strong> {format(parseISO(selectedEvent.event_date), "MMMM dd, yyyy")}</p>
             <p className="text-base"><strong>Time:</strong> {selectedEvent.time_slot}</p>
             <p className="text-base"><strong>Location:</strong> {selectedEvent.location_address}</p>
-            <p className="text-base"><strong>Available Spots:</strong> {selectedEvent.capacity - selectedEvent.slots_filled} / {selectedEvent.capacity}</p>
+            <p className="text-base"><strong>Available Spots:</strong> {availableSpots} / {selectedEvent.capacity}</p>
           </div>
         )}
 
@@ -399,12 +490,85 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerS
           </div>
         </div>
 
+        {/* Step 3: Group Size */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-lg">
+              3
+            </div>
+            <h3 className="text-xl font-semibold">Group Size</h3>
+          </div>
+          
+          <div className="space-y-2">
+            <Label className="text-base">How many people total (including yourself)?</Label>
+            <div className="flex gap-2 flex-wrap">
+              {[1, 2, 3, 4, 5].map((num) => (
+                <Button
+                  key={num}
+                  type="button"
+                  variant={quantity === num ? "default" : "outline"}
+                  className={`h-12 w-12 text-lg ${quantity === num ? "" : ""}`}
+                  onClick={() => handleQuantityChange(num)}
+                  disabled={selectedEvent && num > availableSpots}
+                >
+                  {num}
+                </Button>
+              ))}
+            </div>
+            {selectedEvent && availableSpots < 5 && (
+              <p className="text-sm text-muted-foreground">
+                Maximum {availableSpots} {availableSpots === 1 ? 'person' : 'people'} available for this slot
+              </p>
+            )}
+          </div>
+
+          {/* Additional Attendees */}
+          {quantity > 1 && (
+            <div className="space-y-4 mt-4 p-4 bg-muted/50 rounded-lg border">
+              <p className="font-medium text-base">Please provide names for everyone in your group:</p>
+              
+              <div className="p-3 bg-background rounded border">
+                <p className="text-sm text-muted-foreground mb-1">Person 1 (You)</p>
+                <p className="font-medium">{firstName || "..."} {lastName || "..."}</p>
+              </div>
+              
+              {additionalAttendees.map((attendee, index) => (
+                <div key={index} className="grid md:grid-cols-2 gap-3 p-3 bg-background rounded border">
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-muted-foreground mb-2">Person {index + 2}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm">First Name *</Label>
+                    <Input
+                      value={attendee.firstName}
+                      onChange={(e) => updateAttendee(index, "firstName", e.target.value)}
+                      placeholder="First name"
+                      className="h-10"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm">Last Name *</Label>
+                    <Input
+                      value={attendee.lastName}
+                      onChange={(e) => updateAttendee(index, "lastName", e.target.value)}
+                      placeholder="Last name"
+                      className="h-10"
+                      required
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <Button 
           type="submit" 
           className="w-full h-16 text-xl font-bold bg-accent hover:bg-accent/90"
           disabled={signupMutation.isPending}
         >
-          {signupMutation.isPending ? "Signing Up..." : "Complete Sign Up →"}
+          {signupMutation.isPending ? "Signing Up..." : `Complete Sign Up${quantity > 1 ? ` (${quantity} people)` : ""} →`}
         </Button>
       </form>
     </Card>
