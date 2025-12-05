@@ -17,10 +17,14 @@ import { format, parseISO } from "date-fns";
 import { CheckCircle2, Calendar, MapPin, Clock, Download, ExternalLink, Users } from "lucide-react";
 import { generateCalendarFile, downloadCalendarFile } from "@/utils/generateCalendarFile";
 import { generateGoogleCalendarUrl, generateOutlookCalendarUrl } from "@/utils/calendarLinks";
+import { Badge } from "@/components/ui/badge";
+
+type FilterType = "all" | "regular" | "event" | "ticket";
 
 interface VolunteerSignupFormProps {
   onSuccess?: () => void;
   showOnlyEventType?: "regular" | "event";
+  filterType?: FilterType;
 }
 
 interface Attendee {
@@ -28,7 +32,7 @@ interface Attendee {
   lastName: string;
 }
 
-export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerSignupFormProps = {}) => {
+export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType = "all" }: VolunteerSignupFormProps = {}) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -49,10 +53,11 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerS
     email: string;
     quantity: number;
     attendees: Attendee[];
+    eventName?: string | null;
   } | null>(null);
 
   const { data: events } = useQuery({
-    queryKey: ["volunteer-events-available", showOnlyEventType],
+    queryKey: ["volunteer-events-available", showOnlyEventType, filterType],
     queryFn: async () => {
       let query = supabase
         .from("volunteer_events")
@@ -60,9 +65,19 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerS
         .gte("event_date", "2025-10-01")
         .lt("slots_filled", 10);
       
+      // Legacy prop support
       if (showOnlyEventType) {
         query = query.eq("event_type", showOnlyEventType);
+      } 
+      // New filter type support
+      else if (filterType === "regular") {
+        query = query.eq("event_type", "regular");
+      } else if (filterType === "event") {
+        query = query.eq("event_type", "event").eq("requires_payment", false);
+      } else if (filterType === "ticket") {
+        query = query.eq("requires_payment", true);
       }
+      // "all" shows everything
       
       const { data, error } = await query.order("event_date", { ascending: true });
 
@@ -70,6 +85,23 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerS
       return data;
     },
   });
+
+  const getEventBadge = (event: any) => {
+    if (event.requires_payment) {
+      return <Badge className="bg-amber-500 text-white text-xs">🟡 Ticket</Badge>;
+    }
+    if (event.event_type === "event") {
+      return <Badge className="bg-green-500 text-white text-xs">🟢 Special</Badge>;
+    }
+    return <Badge className="bg-blue-500 text-white text-xs">🔵 Regular</Badge>;
+  };
+
+  const getEventDisplayName = (event: any) => {
+    if (event.event_name) {
+      return event.event_name;
+    }
+    return `${event.location} - ${event.time_slot}`;
+  };
 
   const signupMutation = useMutation({
     mutationFn: async (signupData: {
@@ -127,6 +159,7 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerS
           email,
           quantity,
           attendees: additionalAttendees,
+          eventName: event.event_name,
         });
         setShowConfirmation(true);
       }
@@ -425,7 +458,12 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType }: VolunteerS
                 const spotsLeft = event.capacity - event.slots_filled;
                 return (
                   <SelectItem key={event.id} value={event.id} className="text-base py-3">
-                    {format(parseISO(event.event_date), "MMM dd, yy")} at {event.time_slot} ({spotsLeft} {spotsLeft === 1 ? 'spot' : 'spots'} left)
+                    <div className="flex items-center gap-2">
+                      {getEventBadge(event)}
+                      <span>
+                        {format(parseISO(event.event_date), "MMM dd, yy")} - {getEventDisplayName(event)} ({spotsLeft} {spotsLeft === 1 ? 'spot' : 'spots'})
+                      </span>
+                    </div>
                   </SelectItem>
                 );
               })}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -39,8 +41,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { format, parseISO } from "date-fns";
-import { Plus, Pencil, Trash2, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, Clock, Users, Ticket, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface VolunteerEvent {
@@ -53,6 +61,9 @@ interface VolunteerEvent {
   slots_filled: number;
   event_type: string;
   event_name: string | null;
+  requires_payment: boolean;
+  ticket_price: number | null;
+  ticket_purchase_url: string | null;
 }
 
 const VolunteerEvents = () => {
@@ -62,6 +73,11 @@ const VolunteerEvents = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<VolunteerEvent | null>(null);
   const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
+  
+  // Filter toggles
+  const [showRegular, setShowRegular] = useState(true);
+  const [showSpecial, setShowSpecial] = useState(true);
+  const [showTicket, setShowTicket] = useState(true);
   
   const [formData, setFormData] = useState({
     event_date: "",
@@ -88,6 +104,29 @@ const VolunteerEvents = () => {
       return data as VolunteerEvent[];
     },
   });
+
+  // Calculate summary counts
+  const summaryCounts = useMemo(() => {
+    if (!events) return { total: 0, regular: 0, special: 0, ticket: 0 };
+    
+    return {
+      total: events.length,
+      regular: events.filter(e => e.event_type === "regular" && !e.requires_payment).length,
+      special: events.filter(e => e.event_type === "event" && !e.requires_payment).length,
+      ticket: events.filter(e => e.requires_payment).length,
+    };
+  }, [events]);
+
+  // Filter events based on toggles
+  const filteredEvents = useMemo(() => {
+    if (!events) return [];
+    
+    return events.filter(event => {
+      if (event.requires_payment) return showTicket;
+      if (event.event_type === "event") return showSpecial;
+      return showRegular;
+    });
+  }, [events, showRegular, showSpecial, showTicket]);
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -220,14 +259,70 @@ const VolunteerEvents = () => {
         capacity: event.capacity.toString(),
         event_type: event.event_type,
         event_name: event.event_name || "",
-        requires_payment: (event as any).requires_payment || false,
-        ticket_price: (event as any).ticket_price?.toString() || "",
-        ticket_purchase_url: (event as any).ticket_purchase_url || "",
+        requires_payment: event.requires_payment || false,
+        ticket_price: event.ticket_price?.toString() || "",
+        ticket_purchase_url: event.ticket_purchase_url || "",
       });
     } else {
       setEditingEvent(null);
       resetForm();
     }
+    setIsDialogOpen(true);
+  };
+
+  // Quick-add templates
+  const handleQuickAdd = (template: "knob" | "special" | "ticket" | "custom") => {
+    resetForm();
+    setEditingEvent(null);
+    
+    switch (template) {
+      case "knob":
+        setFormData({
+          event_date: "",
+          time_slot: "10:00 AM – 12:00 PM",
+          location: "Burnsville",
+          location_address: "500 E Travelers Trail Suite 575, Burnsville, MN 55337",
+          capacity: "10",
+          event_type: "regular",
+          event_name: "",
+          requires_payment: false,
+          ticket_price: "",
+          ticket_purchase_url: "",
+        });
+        break;
+      case "special":
+        setFormData({
+          event_date: "",
+          time_slot: "",
+          location: "",
+          location_address: "",
+          capacity: "50",
+          event_type: "event",
+          event_name: "",
+          requires_payment: false,
+          ticket_price: "",
+          ticket_purchase_url: "",
+        });
+        break;
+      case "ticket":
+        setFormData({
+          event_date: "",
+          time_slot: "",
+          location: "",
+          location_address: "",
+          capacity: "50",
+          event_type: "event",
+          event_name: "",
+          requires_payment: true,
+          ticket_price: "",
+          ticket_purchase_url: "",
+        });
+        break;
+      default:
+        // Custom - use default form
+        break;
+    }
+    
     setIsDialogOpen(true);
   };
 
@@ -241,6 +336,16 @@ const VolunteerEvents = () => {
     }
   };
 
+  const getEventTypeBadge = (event: VolunteerEvent) => {
+    if (event.requires_payment) {
+      return <Badge className="bg-amber-500 text-white">🟡 Ticket</Badge>;
+    }
+    if (event.event_type === "event") {
+      return <Badge className="bg-green-500 text-white">🟢 Special</Badge>;
+    }
+    return <Badge className="bg-blue-500 text-white">🔵 Regular</Badge>;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -252,11 +357,100 @@ const VolunteerEvents = () => {
               Manage volunteer events and availability
             </p>
           </div>
-          <Button onClick={() => handleOpenDialog()} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Event
-          </Button>
+          
+          {/* Quick-Add Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add Event
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => handleQuickAdd("knob")} className="gap-2">
+                <Clock className="h-4 w-4 text-blue-500" />
+                Add Knob Hours
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleQuickAdd("special")} className="gap-2">
+                <Users className="h-4 w-4 text-green-500" />
+                Add Special Event
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleQuickAdd("ticket")} className="gap-2">
+                <Ticket className="h-4 w-4 text-amber-500" />
+                Add Ticket Event
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleQuickAdd("custom")} className="gap-2">
+                <Calendar className="h-4 w-4" />
+                Custom Event
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <Card className="p-4 text-center">
+            <Calendar className="h-8 w-8 mx-auto mb-2 text-primary" />
+            <p className="text-3xl font-bold">{summaryCounts.total}</p>
+            <p className="text-sm text-muted-foreground">Total Events</p>
+          </Card>
+          <Card className="p-4 text-center border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
+            <Clock className="h-8 w-8 mx-auto mb-2 text-blue-500" />
+            <p className="text-3xl font-bold text-blue-600">{summaryCounts.regular}</p>
+            <p className="text-sm text-muted-foreground">Knob Hours</p>
+          </Card>
+          <Card className="p-4 text-center border-green-200 bg-green-50/50 dark:bg-green-950/20">
+            <Users className="h-8 w-8 mx-auto mb-2 text-green-500" />
+            <p className="text-3xl font-bold text-green-600">{summaryCounts.special}</p>
+            <p className="text-sm text-muted-foreground">Special Events</p>
+          </Card>
+          <Card className="p-4 text-center border-amber-200 bg-amber-50/50 dark:bg-amber-950/20">
+            <Ticket className="h-8 w-8 mx-auto mb-2 text-amber-500" />
+            <p className="text-3xl font-bold text-amber-600">{summaryCounts.ticket}</p>
+            <p className="text-sm text-muted-foreground">Ticket Events</p>
+          </Card>
+        </div>
+
+        {/* Filter Toggles */}
+        <Card className="p-4 mb-6">
+          <div className="flex flex-wrap gap-6 items-center">
+            <span className="text-sm font-medium text-muted-foreground">Show:</span>
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                id="show-regular" 
+                checked={showRegular} 
+                onCheckedChange={(checked) => setShowRegular(checked as boolean)}
+              />
+              <label htmlFor="show-regular" className="text-sm flex items-center gap-1 cursor-pointer">
+                <Badge className="bg-blue-500 text-white text-xs">🔵</Badge>
+                Knob Hours ({summaryCounts.regular})
+              </label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                id="show-special" 
+                checked={showSpecial} 
+                onCheckedChange={(checked) => setShowSpecial(checked as boolean)}
+              />
+              <label htmlFor="show-special" className="text-sm flex items-center gap-1 cursor-pointer">
+                <Badge className="bg-green-500 text-white text-xs">🟢</Badge>
+                Special Events ({summaryCounts.special})
+              </label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                id="show-ticket" 
+                checked={showTicket} 
+                onCheckedChange={(checked) => setShowTicket(checked as boolean)}
+              />
+              <label htmlFor="show-ticket" className="text-sm flex items-center gap-1 cursor-pointer">
+                <Badge className="bg-amber-500 text-white text-xs">🟡</Badge>
+                Ticket Events ({summaryCounts.ticket})
+              </label>
+            </div>
+          </div>
+        </Card>
 
         <Card className="p-6">
           <div className="border rounded-lg overflow-hidden">
@@ -280,8 +474,8 @@ const VolunteerEvents = () => {
                       Loading events...
                     </TableCell>
                   </TableRow>
-                ) : events && events.length > 0 ? (
-                  events.map((event) => (
+                ) : filteredEvents && filteredEvents.length > 0 ? (
+                  filteredEvents.map((event) => (
                     <TableRow key={event.id}>
                       <TableCell>
                         {format(parseISO(event.event_date), "MMM dd, yyyy")}
@@ -291,9 +485,7 @@ const VolunteerEvents = () => {
                       </TableCell>
                       <TableCell>{event.location}</TableCell>
                       <TableCell>
-                        <span className={event.event_type === 'event' ? 'font-semibold text-primary' : ''}>
-                          {event.event_type === 'event' ? 'Special Event' : 'Regular Hours'}
-                        </span>
+                        {getEventTypeBadge(event)}
                       </TableCell>
                       <TableCell>
                         {event.event_name || '-'}
@@ -405,7 +597,7 @@ const VolunteerEvents = () => {
               <Label htmlFor="location_address">Location Address *</Label>
               <Input
                 id="location_address"
-                placeholder="501 Highway 13 East, Suite 575, Burnsville MN 55337"
+                placeholder="500 E Travelers Trail Suite 575, Burnsville, MN 55337"
                 value={formData.location_address}
                 onChange={(e) => setFormData({ ...formData, location_address: e.target.value })}
                 required
@@ -443,12 +635,10 @@ const VolunteerEvents = () => {
 
             <div className="space-y-4 border-t pt-4">
               <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id="requires_payment"
                   checked={formData.requires_payment}
-                  onChange={(e) => setFormData({ ...formData, requires_payment: e.target.checked })}
-                  className="rounded border-gray-300"
+                  onCheckedChange={(checked) => setFormData({ ...formData, requires_payment: checked as boolean })}
                 />
                 <Label htmlFor="requires_payment" className="cursor-pointer">
                   This event requires a ticket purchase
@@ -501,25 +691,21 @@ const VolunteerEvents = () => {
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
               >
-                {createMutation.isPending || updateMutation.isPending
-                  ? "Saving..."
-                  : editingEvent
-                  ? "Update Event"
-                  : "Create Event"}
+                {editingEvent ? "Save Changes" : "Create Event"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation */}
       <AlertDialog open={!!deleteEventId} onOpenChange={() => setDeleteEventId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Event</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this volunteer event. If people have already signed up,
-              they will still have their confirmations but the event won't appear in the system.
+              Are you sure you want to delete this event? This action cannot be undone.
+              Any existing signups for this event will also be affected.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -528,7 +714,7 @@ const VolunteerEvents = () => {
               onClick={() => deleteEventId && deleteMutation.mutate(deleteEventId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete Event
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
