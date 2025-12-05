@@ -23,7 +23,7 @@ const Signup = () => {
           <div className="space-y-4">
             <div>
               <p className="font-semibold text-xl mb-2">📍 Location</p>
-              <p className="text-muted-foreground">500 Highway 13 East, Suite 575, Burnsville MN 55337</p>
+              <p className="text-muted-foreground">500 E Travelers Trail Suite 575 Burnsville, MN 55337</p>
             </div>
             
             <div>
