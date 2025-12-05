@@ -913,6 +913,38 @@ export type Database = {
         }
         Relationships: []
       }
+      volunteer_signup_attendees: {
+        Row: {
+          created_at: string | null
+          first_name: string
+          id: string
+          last_name: string
+          signup_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          signup_id: string
+        }
+        Update: {
+          created_at?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          signup_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_signup_attendees_signup_id_fkey"
+            columns: ["signup_id"]
+            isOneToOne: false
+            referencedRelation: "volunteer_signups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       volunteer_signups: {
         Row: {
           comment: string | null
