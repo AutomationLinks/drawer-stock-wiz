@@ -12,8 +12,11 @@ const EmbedSignup = () => {
 
   useEffect(() => {
     const observer = new ResizeObserver(() => {
-      const height = document.body.scrollHeight;
-      window.parent.postMessage({ type: "resize", height }, "*");
+      // Small delay to ensure layout is complete after dropdown closes
+      setTimeout(() => {
+        const height = document.body.scrollHeight;
+        window.parent.postMessage({ type: "resize", height }, "*");
+      }, 100);
     });
 
     observer.observe(document.body);
@@ -22,8 +25,8 @@ const EmbedSignup = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
+    <div className="min-h-screen bg-background overflow-auto touch-pan-y">
+      <div className="container mx-auto px-4 py-4 sm:py-8 max-w-3xl">
         <DonationCounter />
 
         {/* Simplified Header */}

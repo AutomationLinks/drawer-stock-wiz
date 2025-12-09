@@ -109,3 +109,10 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Prevent Radix UI scroll lock from breaking mobile scrolling in iframes */
+body[data-scroll-locked] {
+  overflow: auto !important;
+  margin-right: 0 !important;
+  touch-action: auto !important;
+}
