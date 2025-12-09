@@ -451,7 +451,7 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
             <Label htmlFor="event" className="text-xl font-semibold">Choose Your Date</Label>
           </div>
           <Select value={selectedEventId} onValueChange={setSelectedEventId}>
-            <SelectTrigger id="event" className="h-14 text-lg">
+            <SelectTrigger id="event" className="min-h-14 h-auto text-lg py-3">
               <SelectValue placeholder="Select a date and time" />
             </SelectTrigger>
             <SelectContent>
