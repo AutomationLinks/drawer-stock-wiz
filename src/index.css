@@ -128,3 +128,15 @@ body[data-scroll-locked] {
     max-height: 50vh !important;
   }
 }
+
+/* Allow text wrapping in Select dropdowns on mobile */
+@media (max-width: 640px) {
+  [data-radix-select-viewport] {
+    max-width: calc(100vw - 32px);
+  }
+  
+  [data-radix-select-item] {
+    white-space: normal;
+    word-break: break-word;
+  }
+}
