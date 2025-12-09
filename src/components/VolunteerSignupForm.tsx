@@ -432,15 +432,15 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
   }
 
   return (
-    <Card className="p-8">
-      <div className="mb-8 text-center">
-        <h2 className="text-3xl font-bold mb-3">Sign Up to Volunteer</h2>
-        <p className="text-lg text-muted-foreground">
+    <Card className="p-4 sm:p-8 overflow-visible">
+      <div className="mb-6 sm:mb-8 text-center">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-3">Sign Up to Volunteer</h2>
+        <p className="text-base sm:text-lg text-muted-foreground">
           Complete the form below to reserve your spot
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
         {/* Step 1: Event Selection */}
         <div className="space-y-3">
           <div className="flex items-center gap-3 mb-2">
