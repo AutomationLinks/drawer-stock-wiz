@@ -461,9 +461,11 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
                   <SelectItem key={event.id} value={event.id} className="text-base py-3">
                     <div className="flex items-center gap-2">
                       {getEventBadge(event)}
-                      <span>
-                        {format(parseISO(event.event_date), "MMM dd, yy")} - {getEventDisplayName(event)} ({spotsLeft} {spotsLeft === 1 ? 'spot' : 'spots'})
-                      </span>
+                        <span>
+                          {format(parseISO(event.event_date), "MMM dd, yy")} – {getEventDisplayName(event)}
+                          {event.event_name && ` - ${event.time_slot}`}
+                          {` (${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'})`}
+                        </span>
                     </div>
                   </SelectItem>
                 );
