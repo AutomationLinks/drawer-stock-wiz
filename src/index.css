@@ -116,3 +116,15 @@ body[data-scroll-locked] {
   margin-right: 0 !important;
   touch-action: auto !important;
 }
+
+/* Ensure Select dropdown is always visible on mobile */
+[data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
+}
+
+/* Prevent dropdown from being cut off on small screens */
+@media (max-height: 600px) {
+  [data-radix-select-content] {
+    max-height: 50vh !important;
+  }
+}

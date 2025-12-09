@@ -72,6 +72,10 @@ const SelectContent = React.forwardRef<
         className,
       )}
       position={position}
+      side="bottom"
+      sideOffset={4}
+      avoidCollisions={true}
+      collisionPadding={16}
       onCloseAutoFocus={(e) => e.preventDefault()}
       {...props}
     >
