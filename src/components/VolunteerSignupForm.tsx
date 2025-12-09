@@ -62,8 +62,7 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
       let query = supabase
         .from("volunteer_events")
         .select("*")
-        .gte("event_date", "2025-10-01")
-        .lt("slots_filled", 10);
+        .gte("event_date", "2025-10-01");
       
       // Legacy prop support
       if (showOnlyEventType) {
@@ -82,7 +81,9 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
       const { data, error } = await query.order("event_date", { ascending: true });
 
       if (error) throw error;
-      return data;
+      
+      // Filter client-side: only show events with available capacity
+      return data?.filter(event => event.slots_filled < event.capacity) || [];
     },
   });
 
