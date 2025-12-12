@@ -88,7 +88,7 @@ DTSTART:${dtstart}
 DTEND:${dtend}
 SUMMARY:Volunteer at The Drawer - ${location}
 LOCATION:${locationAddress}
-DESCRIPTION:Thank you for volunteering with The Drawer! Please arrive 10 minutes early. Contact us at 877-829-5500 or info@thedrawer.org if you have any questions.
+DESCRIPTION:Thank you for volunteering with The Drawer! Please arrive 10 minutes early. Contact us at (612) 367-7839 or info@thedrawer.org if you have any questions.
 ORGANIZER;CN=The Drawer:mailto:info@thedrawer.org
 ATTENDEE;CN=${volunteerName};RSVP=TRUE:mailto:${volunteerEmail}
 STATUS:CONFIRMED
@@ -233,7 +233,7 @@ const handler = async (req: Request): Promise<Response> => {
           
           <p>If you have any questions or need to make changes to your registration, please contact us:</p>
           <p>
-            📞 <strong>Phone:</strong> 877-829-5500<br>
+            📞 <strong>Phone:</strong> (612) 367-7839<br>
             📧 <strong>Email:</strong> info@thedrawer.org
           </p>
           
@@ -247,7 +247,7 @@ const handler = async (req: Request): Promise<Response> => {
           <hr style="margin-top: 40px; border: none; border-top: 1px solid #e5e7eb;">
           <p style="font-size: 12px; color: #6b7280; text-align: center;">
             The Drawer Inc.<br>
-            14147 Autumnwood Way, Rosemount, MN 55068<br>
+            500 E Travelers Trail Suite 575, Burnsville, MN 55337<br>
             A 501(c)(3) Public Charity • EIN: 82-2834119
           </p>
         </div>
