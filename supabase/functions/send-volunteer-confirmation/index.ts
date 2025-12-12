@@ -89,7 +89,7 @@ DTEND:${dtend}
 SUMMARY:Volunteer at The Drawer - ${location}
 LOCATION:${locationAddress}
 DESCRIPTION:Thank you for volunteering with The Drawer! Please arrive 10 minutes early. Contact us at 877-829-5500 or info@thedrawer.org if you have any questions.
-ORGANIZER;CN=The Drawer:mailto:contact@automationlinks.com
+ORGANIZER;CN=The Drawer:mailto:info@thedrawer.org
 ATTENDEE;CN=${volunteerName};RSVP=TRUE:mailto:${volunteerEmail}
 STATUS:CONFIRMED
 SEQUENCE:0
@@ -157,7 +157,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Email to Admin (Gina)
     const adminEmail = await sendEmail({
-      from: "The Drawer Volunteer <contact@automationlinks.com>",
+      from: "The Drawer Volunteer <info@thedrawer.org>",
       to: ["gina.lindquist@thedrawer.org"],
       subject: `New Volunteer Signup - ${volunteerName} for ${formattedDate}`,
       html: `
@@ -198,7 +198,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Email to Volunteer
     const volunteerEmail = await sendEmail({
-      from: "The Drawer <contact@automationlinks.com>",
+      from: "The Drawer <info@thedrawer.org>",
       to: [signupData.email],
       subject: "Thank You for Volunteering! Event Details Inside",
       html: `
