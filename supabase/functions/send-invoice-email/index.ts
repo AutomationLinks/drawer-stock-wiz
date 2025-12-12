@@ -83,7 +83,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email with Resend
     const emailResponse = await resend.emails.send({
-      from: "The Drawer <onboarding@resend.dev>",
+      from: "The Drawer <info@thedrawer.org>",
       to: [invoice.customers.email],
       subject: `Invoice ${invoice.invoice_number} from The Drawer`,
       html: `
