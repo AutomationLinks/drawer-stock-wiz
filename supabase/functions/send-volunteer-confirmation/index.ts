@@ -262,6 +262,33 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Volunteer email sent:", volunteerEmail);
 
+    // Add volunteer to Resend audience
+    const audienceId = Deno.env.get("RESEND_AUDIENCE_ID");
+    if (audienceId) {
+      try {
+        const contactResponse = await fetch(
+          `https://api.resend.com/audiences/${audienceId}/contacts`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${Deno.env.get("RESEND_API_KEY")}`,
+            },
+            body: JSON.stringify({
+              email: signupData.email,
+              first_name: signupData.first_name,
+              last_name: signupData.last_name,
+              unsubscribed: false,
+            }),
+          }
+        );
+        const contactResult = await contactResponse.json();
+        console.log("Added volunteer to Resend audience:", contactResult);
+      } catch (audienceError) {
+        console.error("Failed to add to audience (non-blocking):", audienceError);
+      }
+    }
+
     return new Response(
       JSON.stringify({ success: true, adminEmail, volunteerEmail }),
       {
