@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { VolunteerSignupForm } from "@/components/VolunteerSignupForm";
 import { DonationCounter } from "@/components/DonationCounter";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, Ticket, Users } from "lucide-react";
+import { Calendar, Clock, Users } from "lucide-react";
 
 type FilterType = "all" | "regular" | "event" | "ticket";
 
@@ -42,7 +42,7 @@ const EmbedSignup = () => {
         {/* Category Filter Tabs */}
         <Card className="mb-6 p-4">
           <Tabs value={filterType} onValueChange={(v) => setFilterType(v as FilterType)}>
-            <TabsList className="grid grid-cols-4 w-full h-auto">
+            <TabsList className="grid grid-cols-3 w-full h-auto">
               <TabsTrigger value="all" className="flex flex-col gap-1 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Calendar className="h-5 w-5" />
                 <span className="text-xs sm:text-sm">All</span>
@@ -54,10 +54,6 @@ const EmbedSignup = () => {
               <TabsTrigger value="event" className="flex flex-col gap-1 py-3 data-[state=active]:bg-green-500 data-[state=active]:text-white">
                 <Users className="h-5 w-5" />
                 <span className="text-xs sm:text-sm">Special Events</span>
-              </TabsTrigger>
-              <TabsTrigger value="ticket" className="flex flex-col gap-1 py-3 data-[state=active]:bg-amber-500 data-[state=active]:text-white">
-                <Ticket className="h-5 w-5" />
-                <span className="text-xs sm:text-sm">Ticket Events</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -73,9 +69,6 @@ const EmbedSignup = () => {
           )}
           {filterType === "event" && (
             <p className="text-green-600 dark:text-green-400 font-medium">🟢 Special Events - One-time volunteer events</p>
-          )}
-          {filterType === "ticket" && (
-            <p className="text-amber-600 dark:text-amber-400 font-medium">🟡 Ticket Events - Events requiring ticket purchase</p>
           )}
         </div>
 
