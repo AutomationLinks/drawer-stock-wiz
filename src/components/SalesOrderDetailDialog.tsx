@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { InvoiceTemplate } from "./InvoiceTemplate";
 import { EditSalesOrderDialog } from "./EditSalesOrderDialog";
-import { Printer, Package, Edit } from "lucide-react";
+import { Printer, Package, Edit, Trash2 } from "lucide-react";
 
 interface SalesOrderDetailDialogProps {
   orderId: string;
@@ -45,6 +46,7 @@ export const SalesOrderDetailDialog = ({ orderId, open, onOpenChange, onSuccess 
   const [order, setOrder] = useState<OrderWithDetails | null>(null);
   const [showInvoice, setShowInvoice] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -96,6 +98,76 @@ export const SalesOrderDetailDialog = ({ orderId, open, onOpenChange, onSuccess 
 
   const handleEditSuccess = () => {
     fetchOrderDetails();
+    onSuccess();
+  };
+
+  const handleDeleteOrder = async () => {
+    if (!order) return;
+    
+    setIsDeleting(true);
+    
+    // Reverse inventory changes by subtracting fulfilled quantities
+    for (const item of order.sales_order_items) {
+      if (item.quantity_fulfilled > 0) {
+        const { data: invItem } = await supabase
+          .from("inventory")
+          .select("stock_on_hand")
+          .eq("id", item.id)
+          .maybeSingle();
+        
+        // Find actual inventory item by name since sales_order_items.id is different from inventory.id
+        const { error: invError } = await supabase
+          .from("inventory")
+          .update({ stock_on_hand: supabase.rpc ? undefined : undefined })
+          .eq("item_name", item.item_name);
+      }
+    }
+    
+    // Subtract fulfilled quantities from inventory
+    for (const item of order.sales_order_items) {
+      if (item.quantity_fulfilled > 0) {
+        const { data: invData } = await supabase
+          .from("inventory")
+          .select("id, stock_on_hand")
+          .eq("item_name", item.item_name)
+          .maybeSingle();
+        
+        if (invData) {
+          await supabase
+            .from("inventory")
+            .update({ stock_on_hand: invData.stock_on_hand - item.quantity_fulfilled })
+            .eq("id", invData.id);
+        }
+      }
+    }
+    
+    // Delete order items first (foreign key constraint)
+    const { error: itemsError } = await supabase
+      .from("sales_order_items")
+      .delete()
+      .eq("sales_order_id", order.id);
+    
+    if (itemsError) {
+      toast({ title: "Error deleting order items", description: itemsError.message, variant: "destructive" });
+      setIsDeleting(false);
+      return;
+    }
+    
+    // Delete the order
+    const { error: orderError } = await supabase
+      .from("sales_orders")
+      .delete()
+      .eq("id", order.id);
+    
+    if (orderError) {
+      toast({ title: "Error deleting order", description: orderError.message, variant: "destructive" });
+      setIsDeleting(false);
+      return;
+    }
+    
+    toast({ title: "Success", description: `Order ${order.sales_order_number} deleted and inventory adjusted` });
+    setIsDeleting(false);
+    onOpenChange(false);
     onSuccess();
   };
 
@@ -182,6 +254,30 @@ export const SalesOrderDetailDialog = ({ orderId, open, onOpenChange, onSuccess 
           </div>
 
           <div className="flex justify-end gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={isDeleting}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {isDeleting ? "Deleting..." : "Delete Order"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Sales Order?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will delete order {order.sales_order_number} and reverse the inventory changes 
+                    (subtract {order.sales_order_items.reduce((sum, i) => sum + i.quantity_fulfilled, 0)} items from stock).
+                    This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteOrder} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete Order
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             {order.shipment_status !== "fulfilled" && (
               <Button variant="outline" onClick={() => setShowEditDialog(true)}>
                 <Edit className="mr-2 h-4 w-4" />

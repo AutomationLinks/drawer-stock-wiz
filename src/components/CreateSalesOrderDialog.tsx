@@ -55,6 +55,7 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
   const [items, setItems] = useState<OrderItem[]>([]);
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [itemSearchOpen, setItemSearchOpen] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -134,6 +135,9 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
       return;
     }
 
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     // Generate order number - find the actual highest order number
     const { data: orders } = await supabase
       .from("sales_orders")
@@ -172,6 +176,7 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
 
     if (orderError) {
       toast({ title: "Error creating order", description: orderError.message, variant: "destructive" });
+      setIsSubmitting(false);
       return;
     }
 
@@ -194,6 +199,7 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
 
     if (itemsError) {
       toast({ title: "Error adding items", description: itemsError.message, variant: "destructive" });
+      setIsSubmitting(false);
       return;
     }
 
@@ -209,6 +215,7 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
     resetForm();
     onSuccess();
     onOpenChange(false);
+    setIsSubmitting(false);
   };
 
   const resetForm = () => {
@@ -480,11 +487,11 @@ export const CreateSalesOrderDialog = ({ open, onOpenChange, onSuccess }: Create
             )}
 
             <div className="flex gap-2 justify-end pt-4">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button onClick={handleSubmit} disabled={!selectedCustomer || items.length === 0}>
-                Create Order
+              <Button onClick={handleSubmit} disabled={!selectedCustomer || items.length === 0 || isSubmitting}>
+                {isSubmitting ? "Creating..." : "Create Order"}
               </Button>
             </div>
           </div>
