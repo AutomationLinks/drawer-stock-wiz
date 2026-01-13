@@ -955,6 +955,7 @@ export type Database = {
           id: string
           last_name: string
           quantity: number
+          reminder_sent: boolean | null
         }
         Insert: {
           comment?: string | null
@@ -965,6 +966,7 @@ export type Database = {
           id?: string
           last_name: string
           quantity?: number
+          reminder_sent?: boolean | null
         }
         Update: {
           comment?: string | null
@@ -975,6 +977,7 @@ export type Database = {
           id?: string
           last_name?: string
           quantity?: number
+          reminder_sent?: boolean | null
         }
         Relationships: [
           {
