@@ -127,6 +127,7 @@ export const InvoicesTable = () => {
                 <TableHead>Date</TableHead>
                 <TableHead>Due Date</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="text-right">Pairs</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -134,12 +135,17 @@ export const InvoicesTable = () => {
             <TableBody>
               {invoices?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No invoices found. Create your first invoice to get started.
                   </TableCell>
                 </TableRow>
               ) : (
-                invoices?.map((invoice) => (
+                invoices?.map((invoice) => {
+                  const totalPairs = invoice.invoice_items?.reduce(
+                    (sum: number, item: any) => sum + (item.quantity || 0),
+                    0
+                  ) || 0;
+                  return (
                   <TableRow key={invoice.id}>
                     <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
                     <TableCell>{invoice.customers?.customer_name}</TableCell>
@@ -148,6 +154,7 @@ export const InvoicesTable = () => {
                       {invoice.due_date ? format(new Date(invoice.due_date), "MMM dd, yyyy") : "—"}
                     </TableCell>
                     <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                    <TableCell className="text-right font-medium">{totalPairs}</TableCell>
                     <TableCell className="text-right">$0.00</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
@@ -192,7 +199,8 @@ export const InvoicesTable = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>
