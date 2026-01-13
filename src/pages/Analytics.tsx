@@ -13,6 +13,9 @@ import { format } from "date-fns";
 import { SalesOrderAnalytics } from "@/components/SalesOrderAnalytics";
 import { InvoiceAnalytics } from "@/components/InvoiceAnalytics";
 import { InventoryAnalytics } from "@/components/InventoryAnalytics";
+import { OutgoingDonationsReport } from "@/components/reports/OutgoingDonationsReport";
+import { IncomingDonationsReport } from "@/components/reports/IncomingDonationsReport";
+import { PartnerDistributionReport } from "@/components/reports/PartnerDistributionReport";
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
 
@@ -205,11 +208,14 @@ const Analytics = () => {
 
         {/* Tabs for different views */}
         <Tabs defaultValue="donations" className="space-y-4">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="donations">Donations</TabsTrigger>
             <TabsTrigger value="sales-orders">Sales Orders</TabsTrigger>
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
             <TabsTrigger value="inventory">Inventory</TabsTrigger>
+            <TabsTrigger value="outgoing-report">Outgoing Report</TabsTrigger>
+            <TabsTrigger value="incoming-report">Incoming Report</TabsTrigger>
+            <TabsTrigger value="partner-report">Partner Report</TabsTrigger>
             <TabsTrigger value="traffic">Website Traffic</TabsTrigger>
             <TabsTrigger value="donors">Donor Management</TabsTrigger>
           </TabsList>
@@ -331,6 +337,21 @@ const Analytics = () => {
           {/* Inventory Tab */}
           <TabsContent value="inventory" className="space-y-4">
             <InventoryAnalytics />
+          </TabsContent>
+
+          {/* Outgoing Donations Report Tab */}
+          <TabsContent value="outgoing-report" className="space-y-4">
+            <OutgoingDonationsReport />
+          </TabsContent>
+
+          {/* Incoming Donations Report Tab */}
+          <TabsContent value="incoming-report" className="space-y-4">
+            <IncomingDonationsReport />
+          </TabsContent>
+
+          {/* Partner Distribution Report Tab */}
+          <TabsContent value="partner-report" className="space-y-4">
+            <PartnerDistributionReport />
           </TabsContent>
 
           {/* Traffic Tab */}
