@@ -89,11 +89,17 @@ const VolunteerEvents = () => {
   const [ticketWebhookUrl, setTicketWebhookUrl] = useState("");
   const [webhookSaved, setWebhookSaved] = useState(false);
   
-  // Load webhook URL from localStorage on mount
+  // Load webhook URL from localStorage on mount, with default
+  const DEFAULT_TICKET_WEBHOOK = "https://hooks.zapier.com/hooks/catch/5173835/uqelrlo/";
+  
   useEffect(() => {
     const savedWebhookUrl = localStorage.getItem("zapier_ticket_webhook_url");
     if (savedWebhookUrl) {
       setTicketWebhookUrl(savedWebhookUrl);
+    } else {
+      // Set default webhook and save it
+      setTicketWebhookUrl(DEFAULT_TICKET_WEBHOOK);
+      localStorage.setItem("zapier_ticket_webhook_url", DEFAULT_TICKET_WEBHOOK);
     }
   }, []);
   
