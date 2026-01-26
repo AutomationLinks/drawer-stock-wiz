@@ -147,7 +147,7 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
 
       return signup;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       const event = events?.find((e) => e.id === selectedEventId);
       if (event) {
         setConfirmedSignup({
@@ -163,6 +163,38 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
           eventName: event.event_name,
         });
         setShowConfirmation(true);
+        
+        // Trigger Zapier webhook for ticket events
+        if (event.requires_payment) {
+          const webhookUrl = localStorage.getItem("zapier_ticket_webhook_url");
+          if (webhookUrl) {
+            try {
+              await fetch(webhookUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                mode: "no-cors",
+                body: JSON.stringify({
+                  type: "ticket_purchase",
+                  event_name: event.event_name || event.location,
+                  event_date: event.event_date,
+                  event_time: event.time_slot,
+                  location: event.location,
+                  location_address: event.location_address,
+                  ticket_price: event.ticket_price,
+                  first_name: firstName,
+                  last_name: lastName,
+                  email: email,
+                  quantity: quantity,
+                  total_amount: (event.ticket_price || 0) * quantity,
+                  timestamp: new Date().toISOString(),
+                }),
+              });
+              console.log("Ticket webhook triggered successfully");
+            } catch (error) {
+              console.error("Failed to trigger ticket webhook:", error);
+            }
+          }
+        }
       }
       
       queryClient.invalidateQueries({ queryKey: ["volunteer-events"] });

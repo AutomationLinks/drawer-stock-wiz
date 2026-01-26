@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
@@ -47,8 +47,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { format, parseISO } from "date-fns";
-import { Plus, Pencil, Trash2, Calendar, Clock, Users, Ticket, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, Clock, Users, Ticket, ChevronDown, Settings, Link, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface VolunteerEvent {
@@ -78,6 +83,29 @@ const VolunteerEvents = () => {
   const [showRegular, setShowRegular] = useState(true);
   const [showSpecial, setShowSpecial] = useState(true);
   const [showTicket, setShowTicket] = useState(true);
+  
+  // Webhook settings
+  const [webhookSettingsOpen, setWebhookSettingsOpen] = useState(false);
+  const [ticketWebhookUrl, setTicketWebhookUrl] = useState("");
+  const [webhookSaved, setWebhookSaved] = useState(false);
+  
+  // Load webhook URL from localStorage on mount
+  useEffect(() => {
+    const savedWebhookUrl = localStorage.getItem("zapier_ticket_webhook_url");
+    if (savedWebhookUrl) {
+      setTicketWebhookUrl(savedWebhookUrl);
+    }
+  }, []);
+  
+  const handleSaveWebhook = () => {
+    localStorage.setItem("zapier_ticket_webhook_url", ticketWebhookUrl);
+    setWebhookSaved(true);
+    toast({
+      title: "Webhook saved",
+      description: "Your Zapier webhook URL has been saved.",
+    });
+    setTimeout(() => setWebhookSaved(false), 2000);
+  };
   
   const [formData, setFormData] = useState({
     event_date: "",
@@ -451,6 +479,64 @@ const VolunteerEvents = () => {
             </div>
           </div>
         </Card>
+
+        {/* Webhook Settings */}
+        <Collapsible
+          open={webhookSettingsOpen}
+          onOpenChange={setWebhookSettingsOpen}
+          className="mb-6"
+        >
+          <Card className="p-4">
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent">
+                <div className="flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Webhook Settings</span>
+                  {ticketWebhookUrl && (
+                    <Badge variant="secondary" className="ml-2">
+                      <Check className="h-3 w-3 mr-1" />
+                      Configured
+                    </Badge>
+                  )}
+                </div>
+                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${webhookSettingsOpen ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="ticket_webhook_url" className="flex items-center gap-2">
+                    <Link className="h-4 w-4" />
+                    Zapier Webhook URL (Ticket Purchases)
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Enter your Zapier webhook URL to receive notifications when someone purchases a ticket.
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      id="ticket_webhook_url"
+                      type="url"
+                      placeholder="https://hooks.zapier.com/hooks/catch/..."
+                      value={ticketWebhookUrl}
+                      onChange={(e) => setTicketWebhookUrl(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button onClick={handleSaveWebhook} disabled={webhookSaved}>
+                      {webhookSaved ? (
+                        <>
+                          <Check className="h-4 w-4 mr-1" />
+                          Saved
+                        </>
+                      ) : (
+                        "Save"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         <Card className="p-6">
           <div className="border rounded-lg overflow-hidden">
