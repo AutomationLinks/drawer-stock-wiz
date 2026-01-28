@@ -243,6 +243,10 @@ export const SalesOrderDetailDialog = ({ orderId, open, onOpenChange, onSuccess 
           </div>
 
           <div className="border-t pt-4">
+            <div className="flex justify-between text-muted-foreground">
+              <span className="font-medium">Total Pairs:</span>
+              <span>{order.sales_order_items.reduce((sum, item) => sum + Number(item.quantity_ordered), 0).toLocaleString()} pairs</span>
+            </div>
             <div className="flex justify-between">
               <span className="font-semibold">Subtotal:</span>
               <span>${Number(order.subtotal).toFixed(2)}</span>

@@ -11,6 +11,10 @@ import { SalesOrderDetailDialog } from "./SalesOrderDetailDialog";
 import { ImportSalesOrdersButton } from "./ImportSalesOrdersButton";
 import { useToast } from "@/hooks/use-toast";
 
+interface SalesOrderItem {
+  quantity_ordered: number;
+}
+
 interface SalesOrder {
   id: string;
   sales_order_number: string;
@@ -22,6 +26,7 @@ interface SalesOrder {
   shipment_status: string;
   total: number;
   customers: { customer_name: string };
+  sales_order_items: SalesOrderItem[];
 }
 
 export const SalesOrdersTable = () => {
@@ -49,7 +54,8 @@ export const SalesOrdersTable = () => {
       .from("sales_orders")
       .select(`
         *,
-        customers (customer_name)
+        customers (customer_name),
+        sales_order_items (quantity_ordered)
       `)
       .order("order_date", { ascending: false });
 
@@ -83,17 +89,21 @@ export const SalesOrdersTable = () => {
   };
 
   const exportToCSV = () => {
-    const headers = ["Order #", "Date", "Customer", "Status", "Invoice", "Payment", "Shipment", "Total"];
-    const rows = filteredOrders.map(order => [
-      order.sales_order_number,
-      format(new Date(order.order_date), "yyyy-MM-dd"),
-      order.customers.customer_name,
-      order.order_status,
-      order.invoice_status,
-      order.payment_status,
-      order.shipment_status,
-      order.total.toString(),
-    ]);
+    const headers = ["Order #", "Date", "Customer", "Status", "Invoice", "Payment", "Shipment", "Pairs", "Total"];
+    const rows = filteredOrders.map(order => {
+      const totalPairs = order.sales_order_items?.reduce((sum, item) => sum + Number(item.quantity_ordered), 0) || 0;
+      return [
+        order.sales_order_number,
+        format(new Date(order.order_date), "yyyy-MM-dd"),
+        order.customers.customer_name,
+        order.order_status,
+        order.invoice_status,
+        order.payment_status,
+        order.shipment_status,
+        totalPairs.toString(),
+        order.total.toString(),
+      ];
+    });
 
     const csv = [headers, ...rows].map(row => row.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -140,32 +150,37 @@ export const SalesOrdersTable = () => {
               <TableHead>Invoice</TableHead>
               <TableHead>Payment</TableHead>
               <TableHead>Shipment</TableHead>
+              <TableHead>Pairs</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredOrders.map((order) => (
-              <TableRow key={order.id}>
-                <TableCell className="font-medium">{order.sales_order_number}</TableCell>
-                <TableCell>{format(new Date(order.order_date), "MMM dd, yyyy")}</TableCell>
-                <TableCell>{order.customers.customer_name}</TableCell>
-                <TableCell>{getStatusBadge(order.order_status, "order")}</TableCell>
-                <TableCell>{getStatusBadge(order.invoice_status, "invoice")}</TableCell>
-                <TableCell>{getStatusBadge(order.payment_status, "payment")}</TableCell>
-                <TableCell>{getStatusBadge(order.shipment_status, "shipment")}</TableCell>
-                <TableCell>${Number(order.total).toFixed(2)}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedOrder(order.id)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {filteredOrders.map((order) => {
+              const totalPairs = order.sales_order_items?.reduce((sum, item) => sum + Number(item.quantity_ordered), 0) || 0;
+              return (
+                <TableRow key={order.id}>
+                  <TableCell className="font-medium">{order.sales_order_number}</TableCell>
+                  <TableCell>{format(new Date(order.order_date), "MMM dd, yyyy")}</TableCell>
+                  <TableCell>{order.customers.customer_name}</TableCell>
+                  <TableCell>{getStatusBadge(order.order_status, "order")}</TableCell>
+                  <TableCell>{getStatusBadge(order.invoice_status, "invoice")}</TableCell>
+                  <TableCell>{getStatusBadge(order.payment_status, "payment")}</TableCell>
+                  <TableCell>{getStatusBadge(order.shipment_status, "shipment")}</TableCell>
+                  <TableCell className="font-medium">{totalPairs.toLocaleString()}</TableCell>
+                  <TableCell>${Number(order.total).toFixed(2)}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedOrder(order.id)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
