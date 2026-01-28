@@ -5,7 +5,8 @@ import { Heart } from "lucide-react";
 
 export const DonationCounter = () => {
   // Historical baseline: Total pairs donated from 2017 until database tracking started
-  const HISTORICAL_DONATIONS = 656779;
+  // Updated January 2026 per client inventory reset spreadsheet
+  const HISTORICAL_DONATIONS = 733038;
 
   const { data: totalDonations, isLoading } = useQuery({
     queryKey: ["total-donations"],
