@@ -1,173 +1,133 @@
 
 
-# Implementation Plan: Inventory Reset, Sales Order Pairs & Volunteer Reminders
+# Inventory Reset - Second Pass Correction
 
-This plan addresses the client's four main requests from the spreadsheet:
-
----
-
-## Summary of Changes
-
-| Task | Description |
-|------|-------------|
-| 1. Inventory Reset | Update stock quantities to match the 2026 spreadsheet without deleting data |
-| 2. Bombas Tees Separation | Create new Bombas Tees category with $10 pricing |
-| 3. Total Pairs on Sales Orders | Add "Pairs" column to sales orders table and detail view |
-| 4. Donation Counter Reset | Update historical baseline from 656,779 to 733,038 |
-| 5. Volunteer Reminder Emails | Create and schedule edge function for day-before reminders |
+## Problem Identified
+The initial inventory update had many incorrect values. After comparing the new spreadsheet against the current database, I found **45+ items** with incorrect quantities. The client specifically noted:
+- Womens underwear 2/3XL shows **-5** (negative!) but should be **405**
+- Womens underwear 4/5XL shows **244** but should be **147**
 
 ---
 
-## Task 1: Inventory Updates from Spreadsheet
+## Items Requiring Correction
 
-The spreadsheet contains 59 inventory items with updated quantities. Key changes:
+### Bombas Socks (6 items to fix + 1 to delete)
+| Item | Current | Should Be |
+|------|---------|-----------|
+| Bombas M socks | 3,200 | 2,750 |
+| Bombas L socks | 1,725 | 2,525 |
+| Bombas XL socks | 5,000 | 2,500 |
+| Bombas Youth socks | 4,825 | 2,813 |
+| Bombas Junior socks | 87 | **DELETE** |
 
-**New Items to Create:**
-- Bombas Mens Tees XS/S (450 pairs @ $10)
-- Bombas Mens Tees M/L (450 pairs @ $10)
-- Bombas Womens Tees XS/S (300 pairs @ $10)
-- Bombas Womens Tees M/L (1,600 pairs @ $10)
-- Bombas Womens Tees XL/2XL (1,550 pairs @ $10)
+### Bombas Underwear (4 items to fix)
+| Item | Current | Should Be |
+|------|---------|-----------|
+| Womens Bombas UW M/L | 5,063 | 5,600 |
+| Womens Bombas UW XL/2XL | 6,185 | 6,254 |
+| Mens Bombas UW M/L | 5,021 | 4,679 |
+| Mens Bombas UW XL/2XL | 8,817 | 7,488 |
 
-**Items to Update (sample of key changes):**
-- Bombas Socks XS: 1,875 (was 2,000)
-- Bombas Socks S: 6,800 (was 7,375)
-- Bombas Toddler socks: 11,677 (was 13,344)
-- Mens socks: 1,613 (was 1,383)
-- ...and 50+ more updates
+### Regular Mens Tees (5 items to fix)
+| Item | Current | Should Be |
+|------|---------|-----------|
+| mens tees and tanks - small | 1,123 | 7 |
+| mens tees and tanks - medium | 233 | 15 |
+| mens tees and tanks - large | 0 | 40 |
+| mens tees and tanks - XL | 0 | 14 |
+| mens tees and tanks - 2XL | 0 | 6 |
 
-**Approach:**
-1. Update existing inventory items via SQL UPDATE statements
-2. Insert new Bombas Tees items with proper category and $10 pricing
-3. All historical transaction data remains intact
+### Socks - Non-Bombas (9 items to fix)
+| Item | Current | Should Be |
+|------|---------|-----------|
+| womens socks | 1,179 | 1,186 |
+| boys socks-toddler | 397 | 445 |
+| boys socks-small | 118 | 165 |
+| boys socks-medium | 413 | 634 |
+| boys socks-large | 295 | 619 |
+| girls socks-toddler | 271 | 520 |
+| girls socks-small | 24 | 159 |
+| girls socks-medium | 516 | 578 |
+| girls socks-large | 320 | 289 |
 
----
+### Womens Underwear (6 items to fix)
+| Item | Current | Should Be |
+|------|---------|-----------|
+| womens underwear-small | 0 | 169 |
+| womens underwear-medium | 54 | 212 |
+| womens underwear-large | 0 | 101 |
+| womens underwear-XL | 21 | 511 |
+| womens underwear-2-3XL | **-5** | 405 |
+| womens underwear-4XL-5XL | 244 | 147 |
 
-## Task 2: Bombas Tees Category
+### Mens Underwear (6 items to fix)
+| Item | Current | Should Be |
+|------|---------|-----------|
+| mens underwear-small | 140 | 403 |
+| mens underwear-medium | 192 | 420 |
+| mens underwear-large | 176 | 570 |
+| mens underwear-XL | 176 | 750 |
+| mens underwear-2XL | 216 | 110 |
+| mens underwear-3XL | 95 | 86 |
 
-**New Category:** "Bombas Tees and Tanks"  
-**Pricing:** $10.00 per item (matching Bombas Socks/Underwear)
+### Boys Underwear (6 items to fix)
+| Item | Current | Should Be |
+|------|---------|-----------|
+| boys underwear-toddler | 346 | 293 |
+| boys underwear-small | 215 | 184 |
+| boys underwear-medium | 192 | 311 |
+| boys underwear-large | 72 | 162 |
+| boys underwear-XL | 240 | 10 |
+| boys underwear-2XL | 75 | 5 |
 
-**Items to add:**
-| Item Name | Quantity | Price |
-|-----------|----------|-------|
-| Bombas Mens Tees XS/S | 450 | $10.00 |
-| Bombas Mens Tees M/L | 450 | $10.00 |
-| Bombas Mens Tees XL/2XL | 0 | $10.00 |
-| Bombas Womens Tees XS/S | 300 | $10.00 |
-| Bombas Womens Tees M/L | 1,600 | $10.00 |
-| Bombas Womens Tees XL/2XL | 1,550 | $10.00 |
-
-Regular tees remain at $2.00 (already configured correctly).
-
----
-
-## Task 3: Total Pairs on Sales Orders
-
-Add a "Pairs" column to sales orders, matching the invoice functionality.
-
-**Changes to `SalesOrdersTable.tsx`:**
-- Fetch `sales_order_items` with each order
-- Add "Pairs" column header between "Shipment" and "Total"
-- Calculate sum of `quantity_ordered` for each order
-- Update empty state colSpan from 9 to 10
-
-**Changes to `SalesOrderDetailDialog.tsx`:**
-- Add "Total Pairs" summary line in the footer section
-- Sum all `quantity_ordered` values from order items
-- Display below subtotal: "Total Pairs: X pairs"
-
----
-
-## Task 4: Donation Counter Adjustment
-
-The client requests resetting the "total donated" counter to **733,038**.
-
-**Current value:** 656,779 (hardcoded baseline)  
-**Requested value:** 733,038
-
-**Change in `DonationCounter.tsx`:**
-```typescript
-// Line 8 - Update the historical baseline
-const HISTORICAL_DONATIONS = 733038;
-```
-
-The counter adds database transactions to this baseline, so adjusting this number will immediately reflect on the website.
-
----
-
-## Task 5: Volunteer Reminder Emails
-
-Currently missing - the `send-volunteer-reminders` edge function does not exist.
-
-**Implementation:**
-
-1. **Create new edge function:** `supabase/functions/send-volunteer-reminders/index.ts`
-   - Query volunteer_signups for events happening tomorrow
-   - Filter out signups where `reminder_sent = true`
-   - Send reminder email via Resend API
-   - Update `reminder_sent` to true after sending
-
-2. **Configure function in `supabase/config.toml`:**
-   ```toml
-   [functions.send-volunteer-reminders]
-   verify_jwt = false
-   ```
-
-3. **Schedule the function to run daily at 9:00 AM Central Time**
-   - Uses pg_cron or an external scheduler
-   - Checks for events occurring the next day
-
-**Email Content:**
-- Reminder of event date, time, and location
-- Calendar link attachment
-- Contact information for questions
+### Girls Underwear (5 items to fix)
+| Item | Current | Should Be |
+|------|---------|-----------|
+| girls underwear-toddler | 228 | 16 |
+| girls underwear-small | 230 | 242 |
+| girls underwear-medium | 152 | 740 |
+| girls underwear-large | 107 | 692 |
+| girls underwear-XL | 159 | 56 |
 
 ---
 
-## Technical Details
+## Implementation Steps
 
-### Database Updates (via SQL)
+1. **Delete Bombas Junior socks** - Per spreadsheet note "delete bombas junior socks"
+
+2. **Execute SQL UPDATE statements** for all 46 inventory items with corrected quantities
+
+3. **Verify total inventory count** matches spreadsheet total of **72,196**
+
+---
+
+## Technical Implementation
+
+Run SQL data updates via the database insert tool to correct all inventory quantities. No schema changes needed - this is purely a data correction.
 
 ```text
--- Update existing Bombas Socks quantities
-UPDATE inventory SET stock_on_hand = 1875 WHERE item_name = 'Bombas XS Socks';
-UPDATE inventory SET stock_on_hand = 6800 WHERE item_name = 'Bombas S socks';
--- ... (50+ similar updates)
+UPDATE inventory SET stock_on_hand = 2750 WHERE item_name = 'Bombas M socks';
+UPDATE inventory SET stock_on_hand = 2525 WHERE item_name = 'Bombas L socks';
+-- ... (44 more UPDATE statements)
 
--- Insert new Bombas Tees items
-INSERT INTO inventory (item_name, category, stock_on_hand, price_per_unit, status)
-VALUES 
-  ('Bombas Mens Tees XS/S', 'Bombas Tees and Tanks', 450, 10.00, 'Active'),
-  ('Bombas Mens Tees M/L', 'Bombas Tees and Tanks', 450, 10.00, 'Active'),
-  -- ... (6 total)
+DELETE FROM inventory WHERE item_name = 'Bombas Junior socks';
 ```
-
-### Files to Modify
-
-1. **src/components/SalesOrdersTable.tsx**
-   - Add `sales_order_items` to query
-   - Add "Pairs" column with quantity sum
-
-2. **src/components/SalesOrderDetailDialog.tsx**
-   - Add "Total Pairs" summary line
-
-3. **src/components/DonationCounter.tsx**
-   - Update `HISTORICAL_DONATIONS` constant to 733,038
-
-4. **supabase/functions/send-volunteer-reminders/index.ts** (new file)
-   - Edge function for sending reminder emails
-
-5. **supabase/config.toml**
-   - Add configuration for new edge function
 
 ---
 
-## Verification After Implementation
+## Summary
 
-1. **Inventory page** - Verify all quantities match spreadsheet
-2. **New Bombas Tees category** - Visible and priced at $10
-3. **Sales Orders page** - "Pairs" column displays correctly
-4. **Donation counter** - Shows 733,038+ on website
-5. **Test volunteer signup** - Confirm reminder email sends next day
+| Category | Items to Fix |
+|----------|-------------|
+| Bombas Socks | 5 updates + 1 delete |
+| Bombas Underwear | 4 updates |
+| Regular Mens Tees | 5 updates |
+| Regular Socks | 9 updates |
+| Womens Underwear | 6 updates |
+| Mens Underwear | 6 updates |
+| Boys Underwear | 6 updates |
+| Girls Underwear | 5 updates |
+| **Total** | **46 updates + 1 delete** |
+
+After implementation, the inventory page will show correct quantities and the negative stock issue will be resolved.
 
