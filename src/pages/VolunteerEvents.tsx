@@ -318,7 +318,7 @@ const VolunteerEvents = () => {
           location_address: "500 E Travelers Trail Suite 575, Burnsville, MN 55337",
           capacity: "10",
           event_type: "regular",
-          event_name: "",
+          event_name: "Drawer Knob Hours",
           requires_payment: false,
           ticket_price: "",
           ticket_purchase_url: "",
