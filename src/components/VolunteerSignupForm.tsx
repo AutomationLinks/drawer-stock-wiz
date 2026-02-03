@@ -98,10 +98,8 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
   };
 
   const getEventDisplayName = (event: any) => {
-    if (event.event_name) {
-      return event.event_name;
-    }
-    return `${event.location} - ${event.time_slot}`;
+    const displayName = event.event_name || event.location;
+    return `${displayName} (${event.time_slot})`;
   };
 
   const signupMutation = useMutation({
