@@ -1,144 +1,130 @@
 
 
-# Plan: Volunteer Event Names & Bulk Contact Import Clarification
+# Plan: Named Regular Volunteer Shifts
 
-## Summary
+## Problem Summary
 
-| Item | Status | Action Needed |
-|------|--------|---------------|
-| Bulk Contact Import | Already exists | Just need training/clarification |
-| Event Name on Admin Page | Already exists | No changes needed |
-| Event Name in Signup Dropdown | Partially working | Minor UI improvement + data update |
-
----
-
-## 1. Bulk Contact Import (Already Available)
-
-**No code changes needed** - this feature already exists on the Companies page.
-
-**How to use it:**
-1. Go to the **Companies** page
-2. Click the **Import Companies** button
-3. Download the CSV template
-4. Fill in your contacts (Company Name, Email, Address, etc.)
-5. Upload and import
-
-The system can import hundreds of contacts at once. It can either update existing companies or skip duplicates based on your preference.
+The current Admin UI hides the "Event Name" field for regular volunteer shifts. It only shows when creating "Special Events". This means:
+- All regular shifts are either unnamed or forced to be called "Drawer Knob Hours"
+- The client cannot create a regular recurring shift called "Care Pair Shift"
+- The quick-add templates don't allow custom naming
 
 ---
 
-## 2. Event Name Column on Admin Page (Already Working)
+## Solution Overview
 
-The `/volunteer-events` admin page already displays an "Event Name" column in the table. Events show their name if one is set, or "-" if blank.
-
-**No changes needed.**
+**Make the Event Name field visible for ALL event types**, so admins can name any shift (regular or special). This is a simple UI change with no database modifications needed.
 
 ---
 
-## 3. Event Name in Volunteer Signup Dropdown (Enhancement)
+## Changes Required
 
-### Current Behavior
-- Events WITH `event_name` set show: `"Jan 14, 25 - Serving with Santa - 1:30 PM - 3:00 PM"`
-- Events WITHOUT `event_name` show: `"Jan 14, 25 - Burnsville - 10:00 AM - 12:00 PM"`
+### 1. Admin UI: Show Event Name for All Event Types
 
-### Problem
-The existing regular volunteer shifts (Drawer Knob Hours) don't have an `event_name` value set in the database, so they just show location and time.
+**File:** `src/pages/VolunteerEvents.tsx`
 
-### Solution
-
-**Part A: Improve the dropdown display format**
-
-Update the volunteer signup dropdown to always show the event name prominently:
-
-```text
-BEFORE: "Jan 14, 25 - Burnsville - 10:00 AM - 12:00 PM"
-AFTER:  "Jan 14, 25 - Drawer Knob Hours (10:00 AM - 12:00 PM)"
+**Current behavior (lines 715-726):**
+```typescript
+{formData.event_type === 'event' && (
+  <div className="space-y-2">
+    <Label htmlFor="event_name">Event Name *</Label>
+    <Input ... />
+  </div>
+)}
 ```
 
-For events with names, display format:
-```text
-"[Date] - [Event Name] ([Time])"
+**New behavior:**
+- Always show the Event Name field regardless of event type
+- Make it required for special events, optional for regular shifts
+- Add helpful placeholder text based on event type
+
+```typescript
+<div className="space-y-2">
+  <Label htmlFor="event_name">
+    Event/Shift Name {formData.event_type === 'event' ? '*' : '(Optional)'}
+  </Label>
+  <Input
+    id="event_name"
+    placeholder={formData.event_type === 'event' 
+      ? "e.g., Holiday Gift Wrapping" 
+      : "e.g., Drawer Knob Hours, Care Pair Shift"}
+    value={formData.event_name}
+    onChange={(e) => setFormData({ ...formData, event_name: e.target.value })}
+    required={formData.event_type === 'event'}
+  />
+</div>
 ```
 
-**Part B: Update existing events with names**
+### 2. Update Quick-Add Templates
 
-Run a data update to add "Drawer Knob Hours" as the event_name for all existing regular volunteer shifts:
+**File:** `src/pages/VolunteerEvents.tsx`
 
-```sql
-UPDATE volunteer_events 
-SET event_name = 'Drawer Knob Hours'
-WHERE event_type = 'regular' 
-  AND (event_name IS NULL OR event_name = '');
+Add a new quick-add option for creating regular shifts with custom names:
+
+| Template | Current Name | New Behavior |
+|----------|-------------|--------------|
+| Add Knob Hours | Pre-fills "Drawer Knob Hours" | Keep as-is |
+| **NEW: Add Regular Shift** | N/A | Opens form with blank event_name, allows naming |
+| Add Special Event | Blank name | Keep as-is |
+| Add Ticket Event | Blank name | Keep as-is |
+| Custom Event | Blank form | Keep as-is |
+
+**Alternative approach:** Simply update the UI to always show the name field (as above), so "Add Knob Hours" can be modified before saving, and "Custom Event" works for any shift type.
+
+### 3. Update Event Type Dropdown Label
+
+**Current (line 709):**
+```typescript
+<SelectItem value="regular">Regular Hours (Drawer Knob)</SelectItem>
 ```
 
-**Part C: Update the quick-add template**
+**New:**
+```typescript
+<SelectItem value="regular">Regular Volunteer Shift</SelectItem>
+```
 
-When using "Add Knob Hours" quick-add, pre-fill the event name with "Drawer Knob Hours".
+This removes the hardcoded "Drawer Knob" reference and makes it clear this can be any regular shift.
 
 ---
 
 ## Files to Modify
 
-### `src/components/VolunteerSignupForm.tsx`
-- Update `getEventDisplayName()` function to always show event name first
-- Improve the dropdown item format for clarity
-
-### `src/pages/VolunteerEvents.tsx`
-- Update the "Add Knob Hours" quick-add template to pre-fill `event_name: "Drawer Knob Hours"`
-
-### Database Update
-- Set `event_name = 'Drawer Knob Hours'` for all existing regular events without names
+| File | Change |
+|------|--------|
+| `src/pages/VolunteerEvents.tsx` | Remove conditional on Event Name field, update Event Type label |
 
 ---
 
-## New Event Creation Going Forward
+## No Database Changes Needed
 
-When creating a new monthly "Care Pair shift":
+The `event_name` column already exists in `volunteer_events` and works for both regular and special event types. This is purely a UI fix.
 
+---
+
+## User Workflow After Implementation
+
+**Creating a new "Care Pair Shift":**
 1. Go to `/volunteer-events`
-2. Click **Add Event** then **Custom Event** (or Add Knob Hours as a starting point)
+2. Click **Add Event** → **Custom Event** (or **Add Knob Hours** and modify)
 3. Fill in:
    - Date: The shift date
-   - Time Slot: e.g., "10:00 AM - 12:00 PM"
-   - Event Name: **"Care Pair shift"**
-   - Location/Address/Capacity as needed
+   - Time Slot: "5:00 PM – 6:30 PM"
+   - **Event/Shift Name: "Care Pair Shift"** ← Now visible and editable!
+   - Location/Capacity as needed
+   - Event Type: **Regular Volunteer Shift**
 4. Save
 
-Volunteers will then see: `"Feb 10, 25 - Care Pair shift (10:00 AM - 12:00 PM)"`
+**Volunteer signup dropdown will show:**
+- "Feb 10, 26 – Care Pair Shift (5:00 PM – 6:30 PM)" with blue badge
+- "Feb 12, 26 – Drawer Knob Hours (10:00 AM – 12:00 PM)" with blue badge
 
 ---
 
-## Technical Details
+## Summary
 
-### Dropdown Display Logic Change
-
-```typescript
-// Current logic in getEventDisplayName()
-if (event.event_name) {
-  return event.event_name;
-}
-return `${event.location} - ${event.time_slot}`;
-
-// New logic - always show name if available, with time in parentheses
-const displayName = event.event_name || event.location;
-return `${displayName} (${event.time_slot})`;
-```
-
-### Quick-Add Template Update
-
-```typescript
-// In handleQuickAdd("knob"):
-event_name: "Drawer Knob Hours",  // Add this line
-```
-
----
-
-## Summary of What Client Will See After Implementation
-
-**In the signup dropdown:**
-- `"Jan 13, 25 - Drawer Knob Hours (10:00 AM - 12:00 PM)"` (with blue badge)
-- `"Jan 15, 25 - Care Pair shift (5:00 PM - 6:30 PM)"` (with blue badge)
-- `"Feb 14, 25 - Valentine's Event (1:00 PM - 3:00 PM)"` (with green badge)
-
-Each shift type is clearly named, making it easy for volunteers to know what they're signing up for.
+This is a **1-file, ~10 line change** that:
+1. Shows the Event Name field for all event types (not just special events)
+2. Updates the Event Type dropdown label to be more generic
+3. Requires no database changes
+4. Is fully backwards compatible with existing events
 
