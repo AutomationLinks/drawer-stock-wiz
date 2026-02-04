@@ -706,24 +706,26 @@ const VolunteerEvents = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="regular">Regular Hours (Drawer Knob)</SelectItem>
+                  <SelectItem value="regular">Regular Volunteer Shift</SelectItem>
                   <SelectItem value="event">Special Event</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {formData.event_type === 'event' && (
-              <div className="space-y-2">
-                <Label htmlFor="event_name">Event Name *</Label>
-                <Input
-                  id="event_name"
-                  placeholder="Holiday Gift Wrapping"
-                  value={formData.event_name}
-                  onChange={(e) => setFormData({ ...formData, event_name: e.target.value })}
-                  required
-                />
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="event_name">
+                Event/Shift Name {formData.event_type === 'event' ? '*' : '(Optional)'}
+              </Label>
+              <Input
+                id="event_name"
+                placeholder={formData.event_type === 'event' 
+                  ? "e.g., Holiday Gift Wrapping" 
+                  : "e.g., Drawer Knob Hours, Care Pair Shift"}
+                value={formData.event_name}
+                onChange={(e) => setFormData({ ...formData, event_name: e.target.value })}
+                required={formData.event_type === 'event'}
+              />
+            </div>
 
             <div className="space-y-4 border-t pt-4">
               <div className="flex items-center space-x-2">
