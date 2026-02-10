@@ -1,105 +1,73 @@
 /**
  * Utility functions for generating calendar integration links
+ * All times are in America/Chicago (Central Time)
  */
 
-/**
- * Formats a date and time for Google Calendar URLs (ISO 8601 format without separators)
- * Example: "2026-01-15T10:00:00Z" becomes "20260115T100000Z"
- */
-const formatDateForGoogle = (dateStr: string, timeStr: string): string => {
-  const [startTime] = timeStr.split("–").map(t => t.trim());
-  const [timePart, period] = startTime.split(" ");
+function parseTimeToLocal(dateStr: string, time: string): { year: number; month: number; day: number; hours: number; minutes: number } {
+  const [timePart, period] = time.split(" ");
   let [hours, minutes] = timePart.split(":").map(Number);
-  
+
   if (period === "PM" && hours !== 12) hours += 12;
   if (period === "AM" && hours === 12) hours = 0;
-  
-  // Parse the date as local date to avoid timezone shifts
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const date = new Date(year, month - 1, day, hours, minutes, 0, 0);
-  
-  // Format as YYYYMMDDTHHmmssZ
-  return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-};
 
-/**
- * Formats a date and time for Outlook Calendar URLs (ISO 8601 format)
- * Example: "2026-01-15T10:00:00Z"
- */
-const formatDateForOutlook = (dateStr: string, timeStr: string): string => {
-  const [startTime] = timeStr.split("–").map(t => t.trim());
-  const [timePart, period] = startTime.split(" ");
-  let [hours, minutes] = timePart.split(":").map(Number);
-  
-  if (period === "PM" && hours !== 12) hours += 12;
-  if (period === "AM" && hours === 12) hours = 0;
-  
-  // Parse the date as local date to avoid timezone shifts
   const [year, month, day] = dateStr.split('-').map(Number);
-  const date = new Date(year, month - 1, day, hours, minutes, 0, 0);
-  
-  return date.toISOString();
-};
+  return { year, month, day, hours, minutes };
+}
 
-/**
- * Calculates end time based on start time and time slot
- */
-const getEndTime = (dateStr: string, timeStr: string): { google: string; outlook: string } => {
-  const [, endTime] = timeStr.split("–").map(t => t.trim());
-  const [timePart, period] = endTime.split(" ");
-  let [hours, minutes] = timePart.split(":").map(Number);
-  
-  if (period === "PM" && hours !== 12) hours += 12;
-  if (period === "AM" && hours === 12) hours = 0;
-  
-  // Parse the date as local date to avoid timezone shifts
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const date = new Date(year, month - 1, day, hours, minutes, 0, 0);
-  
-  return {
-    google: date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z",
-    outlook: date.toISOString()
-  };
-};
+function formatForGoogle(dateStr: string, time: string): string {
+  const { year, month, day, hours, minutes } = parseTimeToLocal(dateStr, time);
+  const yy = String(year).padStart(4, '0');
+  const mm = String(month).padStart(2, '0');
+  const dd = String(day).padStart(2, '0');
+  const hh = String(hours).padStart(2, '0');
+  const mi = String(minutes).padStart(2, '0');
+  return `${yy}${mm}${dd}T${hh}${mi}00`;
+}
 
-/**
- * Generates a Google Calendar URL for adding an event
- */
+function formatForOutlook(dateStr: string, time: string): string {
+  const { year, month, day, hours, minutes } = parseTimeToLocal(dateStr, time);
+  const yy = String(year).padStart(4, '0');
+  const mm = String(month).padStart(2, '0');
+  const dd = String(day).padStart(2, '0');
+  const hh = String(hours).padStart(2, '0');
+  const mi = String(minutes).padStart(2, '0');
+  return `${yy}-${mm}-${dd}T${hh}:${mi}:00`;
+}
+
 export const generateGoogleCalendarUrl = (
   eventDate: string,
   timeSlot: string,
   location: string,
   locationAddress: string
 ): string => {
-  const startDate = formatDateForGoogle(eventDate, timeSlot);
-  const endDate = getEndTime(eventDate, timeSlot).google;
-  
+  const [startTime, endTime] = timeSlot.split("–").map(t => t.trim());
+  const startDate = formatForGoogle(eventDate, startTime);
+  const endDate = formatForGoogle(eventDate, endTime);
+
   const title = encodeURIComponent(`Volunteer at The Drawer - ${location}`);
   const details = encodeURIComponent(
     "Thank you for volunteering with The Drawer! Please arrive 10 minutes early. Contact us at 877-829-5500 or info@thedrawer.org if you have any questions."
   );
   const locationEncoded = encodeURIComponent(locationAddress);
-  
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDate}/${endDate}&details=${details}&location=${locationEncoded}`;
+
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDate}/${endDate}&details=${details}&location=${locationEncoded}&ctz=America/Chicago`;
 };
 
-/**
- * Generates an Outlook Calendar URL for adding an event
- */
 export const generateOutlookCalendarUrl = (
   eventDate: string,
   timeSlot: string,
   location: string,
   locationAddress: string
 ): string => {
-  const startDate = formatDateForOutlook(eventDate, timeSlot);
-  const endDate = getEndTime(eventDate, timeSlot).outlook;
-  
+  const [startTime, endTime] = timeSlot.split("–").map(t => t.trim());
+  const startDate = formatForOutlook(eventDate, startTime);
+  const endDate = formatForOutlook(eventDate, endTime);
+
   const subject = encodeURIComponent(`Volunteer at The Drawer - ${location}`);
   const body = encodeURIComponent(
     "Thank you for volunteering with The Drawer! Please arrive 10 minutes early. Contact us at 877-829-5500 or info@thedrawer.org if you have any questions."
   );
   const locationEncoded = encodeURIComponent(locationAddress);
-  
+
   return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${subject}&startdt=${startDate}&enddt=${endDate}&body=${body}&location=${locationEncoded}`;
 };
