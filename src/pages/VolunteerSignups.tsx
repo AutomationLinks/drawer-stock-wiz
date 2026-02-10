@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format, parseISO } from "date-fns";
-import { Download, Search, Calendar } from "lucide-react";
+import { Download, Search, Calendar, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface VolunteerSignup {
@@ -36,6 +36,7 @@ interface VolunteerSignup {
 const VolunteerSignups = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [dateSearch, setDateSearch] = useState("");
   const [dateFilter, setDateFilter] = useState<"all" | "upcoming" | "past">("all");
 
   const { data: signups, isLoading } = useQuery({
@@ -59,24 +60,35 @@ const VolunteerSignups = () => {
     },
   });
 
-  const filteredSignups = signups?.filter((signup) => {
-    const matchesSearch =
-      signup.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      signup.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      signup.email.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredSignups = signups
+    ?.filter((signup) => {
+      const matchesSearch =
+        signup.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        signup.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        signup.email.toLowerCase().includes(searchTerm.toLowerCase());
 
-    if (dateFilter === "all") return matchesSearch;
+      // Date search filter
+      const matchesDateSearch = dateSearch
+        ? signup.volunteer_events.event_date === dateSearch
+        : true;
 
-    const eventDate = parseISO(signup.volunteer_events.event_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+      if (dateFilter === "all") return matchesSearch && matchesDateSearch;
 
-    if (dateFilter === "upcoming") {
-      return matchesSearch && eventDate >= today;
-    } else {
-      return matchesSearch && eventDate < today;
-    }
-  });
+      const eventDate = parseISO(signup.volunteer_events.event_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (dateFilter === "upcoming") {
+        return matchesSearch && matchesDateSearch && eventDate >= today;
+      } else {
+        return matchesSearch && matchesDateSearch && eventDate < today;
+      }
+    })
+    .sort((a, b) => {
+      const dateCompare = a.volunteer_events.event_date.localeCompare(b.volunteer_events.event_date);
+      if (dateCompare !== 0) return dateCompare;
+      return a.volunteer_events.time_slot.localeCompare(b.volunteer_events.time_slot);
+    });
 
   const exportToCSV = () => {
     if (!filteredSignups || filteredSignups.length === 0) {
@@ -147,7 +159,27 @@ const VolunteerSignups = () => {
           <p className="text-muted-foreground">
             View and export all volunteer registrations
           </p>
-        </div>
+            </div>
+            <div className="relative flex items-center gap-2">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                type="date"
+                value={dateSearch}
+                onChange={(e) => setDateSearch(e.target.value)}
+                className="pl-10 w-[200px]"
+                placeholder="Filter by event date"
+              />
+              {dateSearch && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setDateSearch("")}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
 
         <Card className="p-6">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
