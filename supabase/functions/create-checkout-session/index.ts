@@ -124,6 +124,7 @@ serve(async (req) => {
       console.log('Creating one-time payment checkout session');
       
       session = await stripe.checkout.sessions.create({
+        submit_type: 'donate',
         customer: customer.id,
         mode: 'payment',
         line_items: [
