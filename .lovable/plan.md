@@ -1,130 +1,119 @@
 
 
-# Plan: Named Regular Volunteer Shifts
+# Plan: Fix Calendar Times, Email Display, and Donation Receipt Wording
 
-## Problem Summary
+## Issue 1: Calendar Events Show Wrong Times (e.g., 5am-7am instead of 10am-12pm)
 
-The current Admin UI hides the "Event Name" field for regular volunteer shifts. It only shows when creating "Special Events". This means:
-- All regular shifts are either unnamed or forced to be called "Drawer Knob Hours"
-- The client cannot create a regular recurring shift called "Care Pair Shift"
-- The quick-add templates don't allow custom naming
+### Root Cause
 
----
+This is a **timezone bug**. All calendar file generators treat local times (Central Time) as UTC by appending the "Z" suffix.
 
-## Solution Overview
+For example, a 10:00 AM Central shift gets encoded as `DTSTART:20260210T100000Z` -- meaning 10:00 AM **UTC**, which is 4:00 AM Central (or 5:00 AM during daylight saving). That's why volunteers see 5am-7am.
 
-**Make the Event Name field visible for ALL event types**, so admins can name any shift (regular or special). This is a simple UI change with no database modifications needed.
+### Affected Files (4 total)
 
----
+| File | What It Generates | Where It Runs |
+|------|------------------|---------------|
+| `supabase/functions/send-volunteer-confirmation/index.ts` | .ics attachment in confirmation email | Server (Deno/UTC) |
+| `supabase/functions/send-volunteer-reminders/index.ts` | Email body text only (no calendar) | Server (Deno/UTC) |
+| `src/utils/generateCalendarFile.ts` | .ics file download from browser | Browser (local) |
+| `src/utils/calendarLinks.ts` | Google Calendar and Outlook URLs | Browser (local) |
 
-## Changes Required
+### Fix
 
-### 1. Admin UI: Show Event Name for All Event Types
+Replace the UTC "Z" format with timezone-aware local time format in all ICS generators and calendar link builders:
 
-**File:** `src/pages/VolunteerEvents.tsx`
+**ICS files** -- use `DTSTART;TZID=America/Chicago:20260210T100000` instead of `DTSTART:20260210T100000Z`, and add a `VTIMEZONE` block to the calendar file.
 
-**Current behavior (lines 715-726):**
-```typescript
-{formData.event_type === 'event' && (
-  <div className="space-y-2">
-    <Label htmlFor="event_name">Event Name *</Label>
-    <Input ... />
-  </div>
-)}
-```
+**Google Calendar links** -- stop converting to UTC; instead format as local time without "Z" and add a `ctz=America/Chicago` parameter.
 
-**New behavior:**
-- Always show the Event Name field regardless of event type
-- Make it required for special events, optional for regular shifts
-- Add helpful placeholder text based on event type
-
-```typescript
-<div className="space-y-2">
-  <Label htmlFor="event_name">
-    Event/Shift Name {formData.event_type === 'event' ? '*' : '(Optional)'}
-  </Label>
-  <Input
-    id="event_name"
-    placeholder={formData.event_type === 'event' 
-      ? "e.g., Holiday Gift Wrapping" 
-      : "e.g., Drawer Knob Hours, Care Pair Shift"}
-    value={formData.event_name}
-    onChange={(e) => setFormData({ ...formData, event_name: e.target.value })}
-    required={formData.event_type === 'event'}
-  />
-</div>
-```
-
-### 2. Update Quick-Add Templates
-
-**File:** `src/pages/VolunteerEvents.tsx`
-
-Add a new quick-add option for creating regular shifts with custom names:
-
-| Template | Current Name | New Behavior |
-|----------|-------------|--------------|
-| Add Knob Hours | Pre-fills "Drawer Knob Hours" | Keep as-is |
-| **NEW: Add Regular Shift** | N/A | Opens form with blank event_name, allows naming |
-| Add Special Event | Blank name | Keep as-is |
-| Add Ticket Event | Blank name | Keep as-is |
-| Custom Event | Blank form | Keep as-is |
-
-**Alternative approach:** Simply update the UI to always show the name field (as above), so "Add Knob Hours" can be modified before saving, and "Custom Event" works for any shift type.
-
-### 3. Update Event Type Dropdown Label
-
-**Current (line 709):**
-```typescript
-<SelectItem value="regular">Regular Hours (Drawer Knob)</SelectItem>
-```
-
-**New:**
-```typescript
-<SelectItem value="regular">Regular Volunteer Shift</SelectItem>
-```
-
-This removes the hardcoded "Drawer Knob" reference and makes it clear this can be any regular shift.
+**Outlook Calendar links** -- similar approach, format times as local Central Time.
 
 ---
 
-## Files to Modify
+## Issue 2: Reminder Email Shows "12 AM" Instead of "12 PM"
+
+### Root Cause
+
+The reminder email at line 132 of `send-volunteer-reminders/index.ts` simply outputs the `time_slot` field directly: `${event.time_slot}`. The database contains the correct value "10:00 AM - 12:00 PM".
+
+This is likely either:
+- A rendering issue with the em dash character (–) in some email clients
+- Or an older event that was entered with incorrect data
+
+### Fix
+
+- Verify the actual data in the database for the events the client is referring to
+- The time_slot values currently stored are "10:00 AM - 12:00 PM" and "5:00 PM - 6:30 PM" which are correct
+- No code change needed for the email display itself, but we should confirm with a database query on the specific events the client saw
+
+---
+
+## Issue 3: Donation Receipt Says "Purchase" Instead of "Donation"
+
+### Root Cause
+
+When donors go through Stripe Checkout, the Stripe-hosted page shows the line item as **"Donation - [Campaign]"** (line 134 of `create-checkout-session/index.ts`). However, the Stripe receipt email that Stripe sends automatically may use generic purchase/payment language that The Drawer doesn't control.
+
+The app's own receipt (`DonationReceipt.tsx`) already correctly says "Thank You for Your Donation!" -- this wording is fine.
+
+The issue is likely the **Stripe-generated email receipt** which uses words like "purchase" or "payment". To fix this:
+
+### Fix
+
+Update the Stripe Checkout session configuration to use `submit_type: 'donate'` -- this changes the Stripe checkout button text from "Pay" to "Donate" and adjusts the receipt language accordingly.
+
+```typescript
+session = await stripe.checkout.sessions.create({
+  submit_type: 'donate',  // <-- Add this
+  // ... rest of config
+});
+```
+
+Note: `submit_type` is only available for `mode: 'payment'` (one-time donations), not `mode: 'subscription'`. For monthly donations, Stripe doesn't support custom submit types, but the product name "Monthly Donation" should convey the right intent.
+
+---
+
+## Summary of Changes
 
 | File | Change |
 |------|--------|
-| `src/pages/VolunteerEvents.tsx` | Remove conditional on Event Name field, update Event Type label |
+| `supabase/functions/send-volunteer-confirmation/index.ts` | Fix ICS timezone: use `TZID=America/Chicago` instead of UTC "Z" |
+| `src/utils/generateCalendarFile.ts` | Fix ICS timezone: use `TZID=America/Chicago` instead of UTC "Z" |
+| `src/utils/calendarLinks.ts` | Fix Google/Outlook calendar link timezone handling |
+| `supabase/functions/create-checkout-session/index.ts` | Add `submit_type: 'donate'` to one-time payment sessions |
 
----
+## Technical Details
 
-## No Database Changes Needed
+### ICS Timezone Fix (both server and client files)
 
-The `event_name` column already exists in `volunteer_events` and works for both regular and special event types. This is purely a UI fix.
+Before:
+```
+DTSTART:20260210T100000Z
+DTEND:20260210T120000Z
+```
 
----
+After:
+```
+VTIMEZONE block for America/Chicago
+DTSTART;TZID=America/Chicago:20260210T100000
+DTEND;TZID=America/Chicago:20260210T120000
+```
 
-## User Workflow After Implementation
+### Google Calendar Link Fix
 
-**Creating a new "Care Pair Shift":**
-1. Go to `/volunteer-events`
-2. Click **Add Event** → **Custom Event** (or **Add Knob Hours** and modify)
-3. Fill in:
-   - Date: The shift date
-   - Time Slot: "5:00 PM – 6:30 PM"
-   - **Event/Shift Name: "Care Pair Shift"** ← Now visible and editable!
-   - Location/Capacity as needed
-   - Event Type: **Regular Volunteer Shift**
-4. Save
+Before: Appends "Z" to times, causing UTC interpretation
+After: Format times without "Z" and add `&ctz=America/Chicago` parameter
 
-**Volunteer signup dropdown will show:**
-- "Feb 10, 26 – Care Pair Shift (5:00 PM – 6:30 PM)" with blue badge
-- "Feb 12, 26 – Drawer Knob Hours (10:00 AM – 12:00 PM)" with blue badge
+### Outlook Calendar Link Fix
 
----
+Before: Uses `.toISOString()` which outputs UTC
+After: Format as local time string with timezone offset for Central Time
 
-## Summary
+### Stripe Checkout Fix
 
-This is a **1-file, ~10 line change** that:
-1. Shows the Event Name field for all event types (not just special events)
-2. Updates the Event Type dropdown label to be more generic
-3. Requires no database changes
-4. Is fully backwards compatible with existing events
+Add one line to the one-time payment session creation:
+```typescript
+submit_type: 'donate',
+```
 
