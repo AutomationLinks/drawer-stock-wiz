@@ -119,8 +119,22 @@ export const InventoryAnalytics = () => {
     .slice(0, 10)
     .map(([name, quantity]) => ({ name, quantity }));
 
-  // Top 10 lowest stock items
+  // Unique categories for filter buttons
+  const uniqueCategories = [...new Set(inventory.map(item => item.category))].sort();
+
+  // Top 10 lowest stock items with filters
   const lowestStockItems = [...inventory]
+    .filter(item => {
+      if (excludeNegatives && Number(item.stock_on_hand) <= 0) return false;
+      if (genderFilter !== "all") {
+        const name = item.item_name.toLowerCase();
+        if (genderFilter === "mens" && !(/\bmens?\b/.test(name) || name.includes("men "))) return false;
+        if (genderFilter === "womens" && !(/\bwomens?\b/.test(name) || name.includes("women "))) return false;
+        if (genderFilter === "kids" && !(/(boys?|girls?|kids?|youth)/i.test(name))) return false;
+      }
+      if (categoryFilter !== "all" && item.category !== categoryFilter) return false;
+      return true;
+    })
     .sort((a, b) => Number(a.stock_on_hand) - Number(b.stock_on_hand))
     .slice(0, 10)
     .map(item => ({
