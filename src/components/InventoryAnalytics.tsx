@@ -1,11 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Package, TrendingDown, TrendingUp, AlertTriangle } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { Package, TrendingDown, TrendingUp, AlertTriangle, Download } from "lucide-react";
 import { format } from "date-fns";
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
+const COLORS = [
+  'hsl(207, 79%, 39%)',   // brand blue
+  'hsl(25, 85%, 55%)',    // orange
+  'hsl(170, 60%, 40%)',   // teal
+  'hsl(45, 90%, 50%)',    // amber
+  'hsl(340, 70%, 50%)',   // rose
+  'hsl(260, 60%, 55%)',   // purple
+];
 
 export const InventoryAnalytics = () => {
   const { data: inventory = [] } = useQuery({
@@ -16,7 +25,6 @@ export const InventoryAnalytics = () => {
         .select('*')
         .eq('status', 'Active')
         .order('category');
-      
       if (error) throw error;
       return data;
     },
@@ -27,13 +35,11 @@ export const InventoryAnalytics = () => {
     queryFn: async () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
       const { data, error } = await supabase
         .from('inventory_transactions')
         .select('*')
         .gte('created_at', thirtyDaysAgo.toISOString())
         .order('created_at', { ascending: true });
-      
       if (error) throw error;
       return data;
     },
@@ -42,7 +48,7 @@ export const InventoryAnalytics = () => {
   // Calculate metrics
   const totalStock = inventory.reduce((sum, item) => sum + Number(item.stock_on_hand || 0), 0);
   const lowStockItems = inventory.filter(item => Number(item.stock_on_hand) < 100).length;
-  
+
   const additions = transactions.filter(t => Number(t.quantity_change) > 0);
   const removals = transactions.filter(t => Number(t.quantity_change) < 0);
   const totalAdditions = additions.reduce((sum, t) => sum + Number(t.quantity_change), 0);
@@ -51,9 +57,7 @@ export const InventoryAnalytics = () => {
   // Stock by category
   const categoryStock = inventory.reduce((acc, item) => {
     const category = item.category || 'Unknown';
-    if (!acc[category]) {
-      acc[category] = 0;
-    }
+    if (!acc[category]) acc[category] = 0;
     acc[category] += Number(item.stock_on_hand || 0);
     return acc;
   }, {} as Record<string, number>);
@@ -86,9 +90,7 @@ export const InventoryAnalytics = () => {
   // Transaction types breakdown
   const transactionTypes = transactions.reduce((acc, t) => {
     const type = t.transaction_type || 'unknown';
-    if (!acc[type]) {
-      acc[type] = 0;
-    }
+    if (!acc[type]) acc[type] = 0;
     acc[type]++;
     return acc;
   }, {} as Record<string, number>);
@@ -100,9 +102,7 @@ export const InventoryAnalytics = () => {
   // Top moving items (most transactions)
   const itemActivity = transactions.reduce((acc, t) => {
     const itemName = t.item_name || 'Unknown';
-    if (!acc[itemName]) {
-      acc[itemName] = 0;
-    }
+    if (!acc[itemName]) acc[itemName] = 0;
     acc[itemName] += Math.abs(Number(t.quantity_change));
     return acc;
   }, {} as Record<string, number>);
@@ -111,6 +111,35 @@ export const InventoryAnalytics = () => {
     .sort(([, a], [, b]) => b - a)
     .slice(0, 10)
     .map(([name, quantity]) => ({ name, quantity }));
+
+  // Top 10 lowest stock items
+  const lowestStockItems = [...inventory]
+    .sort((a, b) => Number(a.stock_on_hand) - Number(b.stock_on_hand))
+    .slice(0, 10)
+    .map(item => ({
+      name: item.item_name,
+      stock: Number(item.stock_on_hand),
+      category: item.category,
+    }));
+
+  const downloadLowestStockCSV = () => {
+    const headers = ['Item Name', 'Category', 'Stock On Hand'];
+    const rows = lowestStockItems.map(item => [item.name, item.category, item.stock]);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lowest-stock-items-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const tooltipStyle = {
+    backgroundColor: 'hsl(var(--card))',
+    border: '1px solid hsl(var(--border))',
+    color: 'hsl(var(--card-foreground))',
+  };
 
   return (
     <div className="space-y-4">
@@ -174,15 +203,10 @@ export const InventoryAnalytics = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
                 <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))' 
-                  }} 
-                />
+                <Tooltip contentStyle={tooltipStyle} />
                 <Legend />
-                <Area type="monotone" dataKey="added" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.2)" name="Added" />
-                <Area type="monotone" dataKey="removed" stroke="hsl(var(--secondary))" fill="hsl(var(--secondary) / 0.2)" name="Removed" />
+                <Area type="monotone" dataKey="added" stroke={COLORS[0]} fill="hsla(207, 79%, 39%, 0.2)" name="Added" />
+                <Area type="monotone" dataKey="removed" stroke={COLORS[1]} fill="hsla(25, 85%, 55%, 0.2)" name="Removed" />
               </AreaChart>
             </ResponsiveContainer>
           </CardContent>
@@ -199,13 +223,8 @@ export const InventoryAnalytics = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
                 <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))' 
-                  }} 
-                />
-                <Bar dataKey="stock" fill="hsl(var(--primary))" />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Bar dataKey="stock" fill={COLORS[0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -226,14 +245,14 @@ export const InventoryAnalytics = () => {
                   labelLine={false}
                   label={({ name, value }) => `${name}: ${value}`}
                   outerRadius={80}
-                  fill="hsl(var(--primary))"
+                  fill={COLORS[0]}
                   dataKey="value"
                 >
-                  {typeData.map((entry, index) => (
+                  {typeData.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip contentStyle={tooltipStyle} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -250,15 +269,67 @@ export const InventoryAnalytics = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
                 <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" width={120} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))' 
-                  }} 
-                />
-                <Bar dataKey="quantity" fill="hsl(var(--secondary))" />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Bar dataKey="quantity" fill={COLORS[2]} />
               </BarChart>
             </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* New: Top 10 Lowest Stock Items */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Top 10 Lowest Stock Items</CardTitle>
+              <CardDescription>Items with the least inventory on hand</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={downloadLowestStockCSV}>
+              <Download className="h-4 w-4 mr-2" />
+              Download CSV
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={lowestStockItems} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
+                  <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" width={120} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Bar dataKey="stock" name="Stock On Hand">
+                    {lowestStockItems.map((item, index) => (
+                      <Cell
+                        key={`low-${index}`}
+                        fill={item.stock < 100 ? 'hsl(0, 70%, 50%)' : 'hsl(45, 90%, 50%)'}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+
+              <div className="overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead className="text-right">Stock</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {lowestStockItems.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell>{item.category}</TableCell>
+                        <TableCell className={`text-right font-bold ${item.stock < 100 ? 'text-destructive' : ''}`}>
+                          {item.stock}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
