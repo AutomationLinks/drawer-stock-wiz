@@ -78,7 +78,7 @@ export const PartnerMap = ({ partners, selectedPartnerId, onMarkerClick, showCon
     let hasValidCoordinates = false;
     let markerCount = 0;
 
-    let closePopupTimeout: NodeJS.Timeout;
+    let closePopupTimeout: ReturnType<typeof setTimeout>;
 
     partners.forEach((partner) => {
       // Validate coordinates are within reasonable bounds
