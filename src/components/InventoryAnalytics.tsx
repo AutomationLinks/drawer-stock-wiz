@@ -297,17 +297,41 @@ export const InventoryAnalytics = () => {
           </CardContent>
         </Card>
 
-        {/* New: Top 10 Lowest Stock Items */}
+        {/* Top 10 Lowest Stock Items */}
         <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Top 10 Lowest Stock Items</CardTitle>
-              <CardDescription>Items with the least inventory on hand</CardDescription>
+          <CardHeader>
+            <div className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Top 10 Lowest Stock Items</CardTitle>
+                <CardDescription>Items with the least inventory on hand</CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={downloadLowestStockCSV}>
+                <Download className="h-4 w-4 mr-2" />
+                Download CSV
+              </Button>
             </div>
-            <Button variant="outline" size="sm" onClick={downloadLowestStockCSV}>
-              <Download className="h-4 w-4 mr-2" />
-              Download CSV
-            </Button>
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-4 pt-3 border-t mt-3">
+              <div className="flex items-center gap-2">
+                <Switch id="exclude-neg" checked={excludeNegatives} onCheckedChange={setExcludeNegatives} />
+                <Label htmlFor="exclude-neg" className="text-sm">Exclude negatives</Label>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-muted-foreground mr-1">Gender:</span>
+                {(["all", "mens", "womens", "kids"] as const).map(g => (
+                  <Button key={g} size="sm" variant={genderFilter === g ? "default" : "outline"} onClick={() => setGenderFilter(g)} className="capitalize">
+                    {g === "all" ? "All" : g === "mens" ? "Men" : g === "womens" ? "Women" : "Kids"}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="text-sm text-muted-foreground mr-1">Category:</span>
+                <Button size="sm" variant={categoryFilter === "all" ? "default" : "outline"} onClick={() => setCategoryFilter("all")}>All</Button>
+                {uniqueCategories.map(cat => (
+                  <Button key={cat} size="sm" variant={categoryFilter === cat ? "default" : "outline"} onClick={() => setCategoryFilter(cat)}>{cat}</Button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
