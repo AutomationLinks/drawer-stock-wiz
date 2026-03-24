@@ -205,8 +205,8 @@ export const InventoryAnalytics = () => {
                 <YAxis stroke="hsl(var(--muted-foreground))" />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Legend />
-                <Area type="monotone" dataKey="added" stroke={COLORS[0]} fill={COLORS[0] + ' / 0.2)'} name="Added" />
-                <Area type="monotone" dataKey="removed" stroke={COLORS[1]} fill={COLORS[1] + ' / 0.2)'} name="Removed" />
+                <Area type="monotone" dataKey="added" stroke={COLORS[0]} fill="hsla(207, 79%, 39%, 0.2)" name="Added" />
+                <Area type="monotone" dataKey="removed" stroke={COLORS[1]} fill="hsla(25, 85%, 55%, 0.2)" name="Removed" />
               </AreaChart>
             </ResponsiveContainer>
           </CardContent>
