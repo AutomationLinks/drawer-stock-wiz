@@ -1,55 +1,55 @@
 
 
-# Plan: Add Event Date Search & Chronological Sorting to Volunteer Signups
+# Plan: Reorganize Header Navigation with Grouped Dropdowns + Mobile Hamburger
 
-## Problem
+## Current Problem
 
-The admin Signups page currently only lets you search by name or email. The client needs to quickly find all volunteers for a specific date, and wants the list sorted by event date (not by signup date).
+13 flat links crammed across the top bar. Hard to scan, overflows on smaller screens, no logical grouping.
 
-## Changes (1 file)
+## Proposed Navigation Structure
 
-**File:** `src/pages/VolunteerSignups.tsx`
-
-### 1. Add a Date Picker Filter
-
-Add a date input field next to the existing search bar that lets the admin pick a specific event date. When a date is selected, only signups for that date are shown.
-
-- Add a new `dateSearch` state (string, empty by default)
-- Render an `<Input type="date" />` with a calendar icon and "Filter by event date" label
-- Add a clear button to reset the date filter
-
-### 2. Update Search/Filter Logic
-
-Expand the `filteredSignups` filter to also check against the selected date:
+Group the 13 links into 5 top-level items with logical dropdown menus:
 
 ```text
-Current:  matches name OR email
-New:      matches (name OR email) AND matches selected event date (if set)
+[Logo]    Inventory    Donations ▾    Volunteers ▾    Sales ▾    Partners ▾    [☰ mobile]
+
+Donations dropdown:        Volunteers dropdown:       Sales dropdown:         Partners dropdown:
+  - Donate                   - Volunteer Signup         - Companies             - Partner Locations
+  - Incoming Donations       - Volunteer Signups        - Sales Orders          - Training Videos
+  - Donor Analytics          - Admin Events             - Invoices
+                             - Events                   - Analytics
 ```
 
-The existing All/Upcoming/Past toggle buttons continue to work alongside the date filter.
+- **Inventory** stays a direct link (primary page)
+- **Donations** groups donor-facing and incoming donation pages
+- **Volunteers** groups signup form, admin signups list, events
+- **Sales** groups companies, orders, invoices, analytics
+- **Partners** groups partner locations and training
 
-### 3. Sort by Event Date (Chronological)
+## Desktop: Dropdown Menus
 
-Change the default sort from `created_at` (signup timestamp) to `event_date` (chronological):
+Use the existing `NavigationMenu` component from shadcn/ui (`src/components/ui/navigation-menu.tsx`) for hover/click dropdowns. Each top-level trigger opens a clean list of links.
 
-- Sort the filtered results client-side by `volunteer_events.event_date` ascending
-- This means upcoming dates appear first, making it easy to scan
-- Secondary sort by time_slot so same-day events are ordered logically
+## Mobile: Hamburger Menu with Sheet
 
-### 4. Update Search Placeholder
+On screens below `md` (768px):
+- Hide the desktop nav
+- Show a hamburger icon button
+- Opens a `Sheet` (slide-in panel) with all links organized in collapsible sections
 
-Change the placeholder text from `"Search by name or email..."` to `"Search by name or email..."` (stays the same since date has its own input).
+## Files to Modify
 
-## UI Layout After Change
+| File | Change |
+|------|--------|
+| `src/components/Header.tsx` | Replace flat link list with NavigationMenu dropdowns + mobile Sheet hamburger |
 
-```text
-[Search by name or email...] [Filter by event date: ____] [x]  [All] [Upcoming] [Past]  [Export CSV]
-```
+Single file change. No new components needed -- uses existing `NavigationMenu`, `Sheet`, and `Button` UI primitives.
 
-The date input sits between the text search and the toggle buttons, with a small clear button to reset it.
+## Technical Approach
 
-## No Database or Backend Changes Needed
-
-All filtering and sorting happens client-side on already-fetched data.
+1. Import `NavigationMenu`, `NavigationMenuList`, `NavigationMenuItem`, `NavigationMenuTrigger`, `NavigationMenuContent`, `NavigationMenuLink` from `@/components/ui/navigation-menu`
+2. Import `Sheet`, `SheetTrigger`, `SheetContent` from `@/components/ui/sheet`
+3. Import `Menu` icon from lucide-react
+4. Use `useIsMobile()` hook or responsive classes (`hidden md:flex` / `flex md:hidden`) to toggle between desktop dropdowns and mobile hamburger
+5. Use `useLocation()` to highlight active section
 
