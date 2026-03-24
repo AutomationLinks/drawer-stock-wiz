@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Package, TrendingDown, TrendingUp, AlertTriangle, Download } from "lucide-react";
 import { format } from "date-fns";
@@ -17,6 +20,10 @@ const COLORS = [
 ];
 
 export const InventoryAnalytics = () => {
+  const [excludeNegatives, setExcludeNegatives] = useState(false);
+  const [genderFilter, setGenderFilter] = useState<"all" | "mens" | "womens" | "kids">("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+
   const { data: inventory = [] } = useQuery({
     queryKey: ['inventory_analytics'],
     queryFn: async () => {
@@ -112,8 +119,22 @@ export const InventoryAnalytics = () => {
     .slice(0, 10)
     .map(([name, quantity]) => ({ name, quantity }));
 
-  // Top 10 lowest stock items
+  // Unique categories for filter buttons
+  const uniqueCategories = [...new Set(inventory.map(item => item.category))].sort();
+
+  // Top 10 lowest stock items with filters
   const lowestStockItems = [...inventory]
+    .filter(item => {
+      if (excludeNegatives && Number(item.stock_on_hand) <= 0) return false;
+      if (genderFilter !== "all") {
+        const name = item.item_name.toLowerCase();
+        if (genderFilter === "mens" && !(/\bmens?\b/.test(name) || name.includes("men "))) return false;
+        if (genderFilter === "womens" && !(/\bwomens?\b/.test(name) || name.includes("women "))) return false;
+        if (genderFilter === "kids" && !(/(boys?|girls?|kids?|youth)/i.test(name))) return false;
+      }
+      if (categoryFilter !== "all" && item.category !== categoryFilter) return false;
+      return true;
+    })
     .sort((a, b) => Number(a.stock_on_hand) - Number(b.stock_on_hand))
     .slice(0, 10)
     .map(item => ({
@@ -276,17 +297,41 @@ export const InventoryAnalytics = () => {
           </CardContent>
         </Card>
 
-        {/* New: Top 10 Lowest Stock Items */}
+        {/* Top 10 Lowest Stock Items */}
         <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Top 10 Lowest Stock Items</CardTitle>
-              <CardDescription>Items with the least inventory on hand</CardDescription>
+          <CardHeader>
+            <div className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Top 10 Lowest Stock Items</CardTitle>
+                <CardDescription>Items with the least inventory on hand</CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={downloadLowestStockCSV}>
+                <Download className="h-4 w-4 mr-2" />
+                Download CSV
+              </Button>
             </div>
-            <Button variant="outline" size="sm" onClick={downloadLowestStockCSV}>
-              <Download className="h-4 w-4 mr-2" />
-              Download CSV
-            </Button>
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-4 pt-3 border-t mt-3">
+              <div className="flex items-center gap-2">
+                <Switch id="exclude-neg" checked={excludeNegatives} onCheckedChange={setExcludeNegatives} />
+                <Label htmlFor="exclude-neg" className="text-sm">Exclude negatives</Label>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-muted-foreground mr-1">Gender:</span>
+                {(["all", "mens", "womens", "kids"] as const).map(g => (
+                  <Button key={g} size="sm" variant={genderFilter === g ? "default" : "outline"} onClick={() => setGenderFilter(g)} className="capitalize">
+                    {g === "all" ? "All" : g === "mens" ? "Men" : g === "womens" ? "Women" : "Kids"}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="text-sm text-muted-foreground mr-1">Category:</span>
+                <Button size="sm" variant={categoryFilter === "all" ? "default" : "outline"} onClick={() => setCategoryFilter("all")}>All</Button>
+                {uniqueCategories.map(cat => (
+                  <Button key={cat} size="sm" variant={categoryFilter === cat ? "default" : "outline"} onClick={() => setCategoryFilter(cat)}>{cat}</Button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
