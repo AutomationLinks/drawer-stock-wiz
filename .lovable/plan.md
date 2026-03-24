@@ -1,55 +1,40 @@
 
 
-# Plan: Reorganize Header Navigation with Grouped Dropdowns + Mobile Hamburger
+# Plan: Add Lowest Stock Report + Fix Chart Color Readability
 
-## Current Problem
+## Problem
+1. Charts use `--secondary` and `--muted` as bar/pie colors, which are near-white grays -- virtually invisible on white backgrounds (see screenshot).
+2. No "lowest stock" report exists in the Inventory Analytics.
 
-13 flat links crammed across the top bar. Hard to scan, overflows on smaller screens, no logical grouping.
+## Changes
 
-## Proposed Navigation Structure
+### 1. Fix chart colors site-wide (`src/components/InventoryAnalytics.tsx`)
 
-Group the 13 links into 5 top-level items with logical dropdown menus:
+Replace the `COLORS` array with distinguishable, readable values:
 
 ```text
-[Logo]    Inventory    Donations ▾    Volunteers ▾    Sales ▾    Partners ▾    [☰ mobile]
-
-Donations dropdown:        Volunteers dropdown:       Sales dropdown:         Partners dropdown:
-  - Donate                   - Volunteer Signup         - Companies             - Partner Locations
-  - Incoming Donations       - Volunteer Signups        - Sales Orders          - Training Videos
-  - Donor Analytics          - Admin Events             - Invoices
-                             - Events                   - Analytics
+Old:  primary (blue), secondary (near-white), accent (blue), muted (near-white)
+New:  primary blue, orange, teal, amber -- all high-contrast on white
 ```
 
-- **Inventory** stays a direct link (primary page)
-- **Donations** groups donor-facing and incoming donation pages
-- **Volunteers** groups signup form, admin signups list, events
-- **Sales** groups companies, orders, invoices, analytics
-- **Partners** groups partner locations and training
+Use explicit HSL values like `hsl(207, 79%, 39%)`, `hsl(25, 85%, 55%)`, `hsl(170, 60%, 40%)`, `hsl(45, 90%, 50%)` instead of CSS variables that resolve to background-like grays.
 
-## Desktop: Dropdown Menus
+Also update the "Top 10 Moving Items" bar chart from `fill="hsl(var(--secondary))"` to a readable color (e.g., the primary blue or orange).
 
-Use the existing `NavigationMenu` component from shadcn/ui (`src/components/ui/navigation-menu.tsx`) for hover/click dropdowns. Each top-level trigger opens a clean list of links.
+### 2. Add "Top 10 Lowest Stock Items" card (`src/components/InventoryAnalytics.tsx`)
 
-## Mobile: Hamburger Menu with Sheet
+- Compute: sort `inventory` by `stock_on_hand` ascending, take first 10
+- Horizontal bar chart matching the existing "Top 10 Moving Items" style
+- Bars colored with warning tones (amber/red gradient for items below 100)
+- Simple table below: item name, category, stock level
+- "Download CSV" button to export the 10 items
 
-On screens below `md` (768px):
-- Hide the desktop nav
-- Show a hamburger icon button
-- Opens a `Sheet` (slide-in panel) with all links organized in collapsible sections
+Place as a new card in the 2-column grid.
 
-## Files to Modify
+### Single file change
+| File | What |
+|------|------|
+| `src/components/InventoryAnalytics.tsx` | New COLORS array, fix secondary bar fill, add lowest-stock card with chart + table + CSV export |
 
-| File | Change |
-|------|--------|
-| `src/components/Header.tsx` | Replace flat link list with NavigationMenu dropdowns + mobile Sheet hamburger |
-
-Single file change. No new components needed -- uses existing `NavigationMenu`, `Sheet`, and `Button` UI primitives.
-
-## Technical Approach
-
-1. Import `NavigationMenu`, `NavigationMenuList`, `NavigationMenuItem`, `NavigationMenuTrigger`, `NavigationMenuContent`, `NavigationMenuLink` from `@/components/ui/navigation-menu`
-2. Import `Sheet`, `SheetTrigger`, `SheetContent` from `@/components/ui/sheet`
-3. Import `Menu` icon from lucide-react
-4. Use `useIsMobile()` hook or responsive classes (`hidden md:flex` / `flex md:hidden`) to toggle between desktop dropdowns and mobile hamburger
-5. Use `useLocation()` to highlight active section
+No backend changes needed.
 
