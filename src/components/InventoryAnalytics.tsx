@@ -20,6 +20,10 @@ const COLORS = [
 ];
 
 export const InventoryAnalytics = () => {
+  const [excludeNegatives, setExcludeNegatives] = useState(false);
+  const [genderFilter, setGenderFilter] = useState<"all" | "mens" | "womens" | "kids">("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+
   const { data: inventory = [] } = useQuery({
     queryKey: ['inventory_analytics'],
     queryFn: async () => {
