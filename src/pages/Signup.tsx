@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { VolunteerSignupForm } from "@/components/VolunteerSignupForm";
-import { DonationCounter } from "@/components/DonationCounter";
+// import { DonationCounter } from "@/components/DonationCounter";
 import { Header } from "@/components/Header";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, Users } from "lucide-react";
@@ -15,7 +15,7 @@ const Signup = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <DonationCounter />
+        {/* <DonationCounter /> */}
         
         {/* Header */}
         <div className="text-center mb-8">

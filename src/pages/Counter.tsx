@@ -1,4 +1,4 @@
-import { DonationCounter } from "@/components/DonationCounter";
+// import { DonationCounter } from "@/components/DonationCounter";
 import { Header } from "@/components/Header";
 
 const Counter = () => {
@@ -7,7 +7,7 @@ const Counter = () => {
       <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
-          <DonationCounter />
+          {/* <DonationCounter /> */}
         </div>
       </div>
     </div>
