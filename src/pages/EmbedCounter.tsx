@@ -1,4 +1,4 @@
-import { DonationCounter } from "@/components/DonationCounter";
+// import { DonationCounter } from "@/components/DonationCounter";
 
 const EmbedCounter = () => {
   return (

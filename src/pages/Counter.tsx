@@ -1,4 +1,4 @@
-import { DonationCounter } from "@/components/DonationCounter";
+// import { DonationCounter } from "@/components/DonationCounter";
 import { Header } from "@/components/Header";
 
 const Counter = () => {

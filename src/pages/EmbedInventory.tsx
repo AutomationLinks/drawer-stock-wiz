@@ -1,6 +1,6 @@
 import { InventoryDashboard } from "@/components/InventoryDashboard";
 import { AnalyticsSummary } from "@/components/AnalyticsSummary";
-import { DonationCounter } from "@/components/DonationCounter";
+// import { DonationCounter } from "@/components/DonationCounter";
 
 const EmbedInventory = () => {
   return (
