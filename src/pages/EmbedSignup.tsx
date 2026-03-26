@@ -27,7 +27,7 @@ const EmbedSignup = () => {
   return (
     <div className="min-h-screen bg-background overflow-auto touch-pan-y">
       <div className="container mx-auto px-4 py-4 sm:py-8 max-w-3xl">
-        <DonationCounter />
+        {/* <DonationCounter /> */}
 
         {/* Simplified Header */}
         <div className="text-center mb-8">

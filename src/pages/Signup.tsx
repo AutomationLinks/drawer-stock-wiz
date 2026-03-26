@@ -15,7 +15,7 @@ const Signup = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <DonationCounter />
+        {/* <DonationCounter /> */}
         
         {/* Header */}
         <div className="text-center mb-8">
