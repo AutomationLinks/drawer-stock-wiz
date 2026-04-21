@@ -126,6 +126,28 @@ export const InvoiceTemplate = ({ order, onClose, isInvoice = false }: InvoiceTe
                 <span>Sub Total:</span>
                 <span>$0.00</span>
               </div>
+              {(() => {
+                const totalPairs = items?.reduce((sum: number, it: any) => sum + Number(isInvoice ? it.quantity : it.quantity_ordered) || 0, 0) || 0;
+                const bombasPairs = items?.reduce((sum: number, it: any) => {
+                  const isBombas = (it.item_name || "").toLowerCase().includes("bombas");
+                  if (!isBombas) return sum;
+                  return sum + (Number(isInvoice ? it.quantity : it.quantity_ordered) || 0);
+                }, 0) || 0;
+                return (
+                  <>
+                    <div className="flex justify-between py-2 border-t">
+                      <span>Total Pairs:</span>
+                      <span>{totalPairs}</span>
+                    </div>
+                    {bombasPairs > 0 && (
+                      <div className="flex justify-between py-2">
+                        <span>Bombas Pairs:</span>
+                        <span>{bombasPairs}</span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
               <div className="flex justify-between py-2 border-t-2 font-bold text-lg">
                 <span>Total:</span>
                 <span>$0.00</span>
