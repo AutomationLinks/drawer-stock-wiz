@@ -246,6 +246,16 @@ export const InvoiceDetailDialog = ({
               <span>Total Pairs:</span>
               <span>{invoice.invoice_items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 0}</span>
             </div>
+            <div className="flex justify-between text-lg font-semibold mb-2">
+              <span>Bombas Pairs:</span>
+              <span>
+                {invoice.invoice_items?.reduce(
+                  (sum: number, item: any) =>
+                    sum + ((item.item_name || "").toLowerCase().includes("bombas") ? (item.quantity || 0) : 0),
+                  0
+                ) || 0}
+              </span>
+            </div>
             <div className="flex justify-between text-lg font-semibold">
               <span>Total:</span>
               <span>$0.00</span>
@@ -283,6 +293,14 @@ export const InvoiceDetailDialog = ({
                 <Printer className="h-4 w-4 mr-2" />
                 Print
               </Button>
+              <Button variant="outline" onClick={handleDownloadPdf} disabled={downloadingPdf}>
+                <Download className="h-4 w-4 mr-2" />
+                {downloadingPdf ? "Generating..." : "Download PDF"}
+              </Button>
+              <Button variant="outline" onClick={() => setShowDuplicateDialog(true)}>
+                <Copy className="h-4 w-4 mr-2" />
+                Duplicate
+              </Button>
               {invoice.status !== "fulfilled" && (
                 <>
                   <Button variant="outline" onClick={handleSendEmail}>
@@ -309,6 +327,13 @@ export const InvoiceDetailDialog = ({
         setShowEditDialog(false);
         onUpdate();
       }}
+    />
+
+    <DuplicateInvoiceDialog
+      open={showDuplicateDialog}
+      onOpenChange={setShowDuplicateDialog}
+      invoice={invoice}
+      onSuccess={onUpdate}
     />
 
     <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
