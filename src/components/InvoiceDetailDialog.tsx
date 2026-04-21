@@ -244,14 +244,14 @@ export const InvoiceDetailDialog = ({
           <div className="border-t pt-4">
             <div className="flex justify-between text-lg font-semibold mb-2">
               <span>Total Pairs:</span>
-              <span>{invoice.invoice_items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 0}</span>
+              <span>{invoice.invoice_items?.reduce((sum: number, item: any) => sum + (Number(item.quantity) || 0), 0) || 0}</span>
             </div>
             <div className="flex justify-between text-lg font-semibold mb-2">
               <span>Bombas Pairs:</span>
               <span>
                 {invoice.invoice_items?.reduce(
                   (sum: number, item: any) =>
-                    sum + ((item.item_name || "").toLowerCase().includes("bombas") ? (item.quantity || 0) : 0),
+                    sum + ((item.item_name || "").toLowerCase().includes("bombas") ? (Number(item.quantity) || 0) : 0),
                   0
                 ) || 0}
               </span>
