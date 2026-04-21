@@ -143,12 +143,12 @@ export const InvoicesTable = () => {
               ) : (
                 invoices?.map((invoice) => {
                   const totalPairs = invoice.invoice_items?.reduce(
-                    (sum: number, item: any) => sum + (item.quantity || 0),
+                    (sum: number, item: any) => sum + (Number(item.quantity) || 0),
                     0
                   ) || 0;
                   const bombasPairs = invoice.invoice_items?.reduce(
                     (sum: number, item: any) =>
-                      sum + ((item.item_name || "").toLowerCase().includes("bombas") ? (item.quantity || 0) : 0),
+                      sum + ((item.item_name || "").toLowerCase().includes("bombas") ? (Number(item.quantity) || 0) : 0),
                     0
                   ) || 0;
                   return (
