@@ -127,7 +127,10 @@ export const InvoiceTemplate = ({ order, onClose, isInvoice = false }: InvoiceTe
                 <span>$0.00</span>
               </div>
               {(() => {
-                const totalPairs = items?.reduce((sum: number, it: any) => sum + Number(isInvoice ? it.quantity : it.quantity_ordered) || 0, 0) || 0;
+                const totalPairs = items?.reduce((sum: number, it: any) => {
+                  const qty = Number(isInvoice ? it.quantity : it.quantity_ordered) || 0;
+                  return sum + qty;
+                }, 0) || 0;
                 const bombasPairs = items?.reduce((sum: number, it: any) => {
                   const isBombas = (it.item_name || "").toLowerCase().includes("bombas");
                   if (!isBombas) return sum;
