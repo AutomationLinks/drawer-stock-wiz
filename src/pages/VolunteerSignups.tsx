@@ -14,8 +14,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format, parseISO } from "date-fns";
-import { Download, Search, Calendar, X } from "lucide-react";
+import { Download, Search, Calendar, X, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface VolunteerSignup {
   id: string;
@@ -38,8 +48,10 @@ const VolunteerSignups = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [dateSearch, setDateSearch] = useState("");
   const [dateFilter, setDateFilter] = useState<"all" | "upcoming" | "past">("all");
+  const [cancelTarget, setCancelTarget] = useState<VolunteerSignup | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
-  const { data: signups, isLoading } = useQuery({
+  const { data: signups, isLoading, refetch } = useQuery({
     queryKey: ["volunteer-signups"],
     queryFn: async () => {
       const { data, error } = await supabase
