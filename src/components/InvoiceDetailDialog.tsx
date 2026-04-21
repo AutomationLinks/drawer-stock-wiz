@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Printer, Mail, CheckCircle, Trash2, Pencil } from "lucide-react";
+import { Printer, Mail, CheckCircle, Trash2, Pencil, Download, Copy } from "lucide-react";
 import { format } from "date-fns";
 import { InvoiceTemplate } from "./InvoiceTemplate";
 import { EditInvoiceDialog } from "./EditInvoiceDialog";
+import { DuplicateInvoiceDialog } from "./DuplicateInvoiceDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -35,9 +36,86 @@ export const InvoiceDetailDialog = ({
   const [showPrintView, setShowPrintView] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const handlePrint = () => {
     setShowPrintView(true);
+  };
+
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      const [{ default: jsPDF }, { default: html2canvas }, { createRoot }] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas"),
+        import("react-dom/client"),
+      ]);
+
+      const container = document.createElement("div");
+      container.style.position = "fixed";
+      container.style.left = "-10000px";
+      container.style.top = "0";
+      container.style.width = "850px";
+      container.style.background = "#ffffff";
+      document.body.appendChild(container);
+
+      const root = createRoot(container);
+      const orderProp = {
+        invoice_number: invoice.invoice_number,
+        order_date: invoice.invoice_date,
+        due_date: invoice.due_date,
+        payment_terms: "Net 30",
+        subtotal: invoice.subtotal,
+        total: invoice.total,
+        notes: invoice.notes,
+        customers: invoice.customers,
+        invoice_items: invoice.invoice_items,
+      };
+
+      await new Promise<void>((resolve) => {
+        root.render(
+          <InvoiceTemplate order={orderProp} onClose={() => {}} isInvoice={true} />
+        );
+        setTimeout(resolve, 500);
+      });
+
+      const node = (container.querySelector(".bg-card") as HTMLElement) || container;
+      const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+      const pdf = new jsPDF("p", "pt", "letter");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight = (canvas.height * pageWidth) / canvas.width;
+
+      if (imgHeight <= pageHeight) {
+        pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, pageWidth, imgHeight);
+      } else {
+        let position = 0;
+        const pageCanvasHeightPx = (canvas.width * pageHeight) / pageWidth;
+        while (position < canvas.height) {
+          const slice = document.createElement("canvas");
+          slice.width = canvas.width;
+          slice.height = Math.min(pageCanvasHeightPx, canvas.height - position);
+          const ctx = slice.getContext("2d")!;
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, slice.width, slice.height);
+          ctx.drawImage(canvas, 0, position, canvas.width, slice.height, 0, 0, slice.width, slice.height);
+          if (position > 0) pdf.addPage();
+          pdf.addImage(slice.toDataURL("image/png"), "PNG", 0, 0, pageWidth, (slice.height * pageWidth) / canvas.width);
+          position += pageCanvasHeightPx;
+        }
+      }
+
+      pdf.save(`Invoice-${invoice.invoice_number}.pdf`);
+      root.unmount();
+      document.body.removeChild(container);
+      toast.success("PDF downloaded");
+    } catch (err: any) {
+      console.error("PDF download failed", err);
+      toast.error("Failed to generate PDF");
+    } finally {
+      setDownloadingPdf(false);
+    }
   };
 
   const handleSendEmail = () => {
@@ -168,6 +246,16 @@ export const InvoiceDetailDialog = ({
               <span>Total Pairs:</span>
               <span>{invoice.invoice_items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 0}</span>
             </div>
+            <div className="flex justify-between text-lg font-semibold mb-2">
+              <span>Bombas Pairs:</span>
+              <span>
+                {invoice.invoice_items?.reduce(
+                  (sum: number, item: any) =>
+                    sum + ((item.item_name || "").toLowerCase().includes("bombas") ? (item.quantity || 0) : 0),
+                  0
+                ) || 0}
+              </span>
+            </div>
             <div className="flex justify-between text-lg font-semibold">
               <span>Total:</span>
               <span>$0.00</span>
@@ -205,6 +293,14 @@ export const InvoiceDetailDialog = ({
                 <Printer className="h-4 w-4 mr-2" />
                 Print
               </Button>
+              <Button variant="outline" onClick={handleDownloadPdf} disabled={downloadingPdf}>
+                <Download className="h-4 w-4 mr-2" />
+                {downloadingPdf ? "Generating..." : "Download PDF"}
+              </Button>
+              <Button variant="outline" onClick={() => setShowDuplicateDialog(true)}>
+                <Copy className="h-4 w-4 mr-2" />
+                Duplicate
+              </Button>
               {invoice.status !== "fulfilled" && (
                 <>
                   <Button variant="outline" onClick={handleSendEmail}>
@@ -231,6 +327,13 @@ export const InvoiceDetailDialog = ({
         setShowEditDialog(false);
         onUpdate();
       }}
+    />
+
+    <DuplicateInvoiceDialog
+      open={showDuplicateDialog}
+      onOpenChange={setShowDuplicateDialog}
+      invoice={invoice}
+      onSuccess={onUpdate}
     />
 
     <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

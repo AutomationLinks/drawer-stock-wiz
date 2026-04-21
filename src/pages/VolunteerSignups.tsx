@@ -14,8 +14,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format, parseISO } from "date-fns";
-import { Download, Search, Calendar, X } from "lucide-react";
+import { Download, Search, Calendar, X, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface VolunteerSignup {
   id: string;
@@ -38,8 +48,10 @@ const VolunteerSignups = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [dateSearch, setDateSearch] = useState("");
   const [dateFilter, setDateFilter] = useState<"all" | "upcoming" | "past">("all");
+  const [cancelTarget, setCancelTarget] = useState<VolunteerSignup | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
-  const { data: signups, isLoading } = useQuery({
+  const { data: signups, isLoading, refetch } = useQuery({
     queryKey: ["volunteer-signups"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -91,6 +103,27 @@ const VolunteerSignups = () => {
     });
 
   const exportToCSV = () => {
+    return _exportToCSV();
+  };
+
+  const handleCancel = async () => {
+    if (!cancelTarget) return;
+    setCancelling(true);
+    const { error } = await supabase
+      .from("volunteer_signups")
+      .delete()
+      .eq("id", cancelTarget.id);
+    setCancelling(false);
+    if (error) {
+      toast({ title: "Error", description: "Failed to cancel signup.", variant: "destructive" });
+    } else {
+      toast({ title: "Signup cancelled", description: `Freed ${cancelTarget.quantity} slot(s).` });
+      setCancelTarget(null);
+      refetch();
+    }
+  };
+
+  const _exportToCSV = () => {
     if (!filteredSignups || filteredSignups.length === 0) {
       toast({
         title: "No Data",
@@ -238,12 +271,13 @@ const VolunteerSignups = () => {
                   <TableHead className="text-center">People</TableHead>
                   <TableHead>Comment</TableHead>
                   <TableHead>Signed Up On</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       Loading signups...
                     </TableCell>
                   </TableRow>
@@ -276,11 +310,21 @@ const VolunteerSignups = () => {
                           "MM/dd/yy hh:mm a"
                         )}
                       </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setCancelTarget(signup)}
+                          title="Cancel signup"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       No signups found
                     </TableCell>
                   </TableRow>
@@ -290,6 +334,34 @@ const VolunteerSignups = () => {
           </div>
         </Card>
       </div>
+
+      <AlertDialog open={!!cancelTarget} onOpenChange={(o) => !o && setCancelTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel volunteer signup?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {cancelTarget && (
+                <>
+                  This will remove <strong>{cancelTarget.first_name} {cancelTarget.last_name}</strong> from the
+                  {" "}{cancelTarget.volunteer_events.time_slot} slot on{" "}
+                  {format(parseISO(cancelTarget.volunteer_events.event_date), "MMM dd, yyyy")} and free up{" "}
+                  {cancelTarget.quantity} slot(s). This cannot be undone.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelling}>Keep Signup</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleCancel(); }}
+              disabled={cancelling}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {cancelling ? "Cancelling..." : "Cancel Signup"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
