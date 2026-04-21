@@ -103,6 +103,27 @@ const VolunteerSignups = () => {
     });
 
   const exportToCSV = () => {
+    return _exportToCSV();
+  };
+
+  const handleCancel = async () => {
+    if (!cancelTarget) return;
+    setCancelling(true);
+    const { error } = await supabase
+      .from("volunteer_signups")
+      .delete()
+      .eq("id", cancelTarget.id);
+    setCancelling(false);
+    if (error) {
+      toast({ title: "Error", description: "Failed to cancel signup.", variant: "destructive" });
+    } else {
+      toast({ title: "Signup cancelled", description: `Freed ${cancelTarget.quantity} slot(s).` });
+      setCancelTarget(null);
+      refetch();
+    }
+  };
+
+  const _exportToCSV = () => {
     if (!filteredSignups || filteredSignups.length === 0) {
       toast({
         title: "No Data",
