@@ -363,49 +363,84 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
             </p>
           </div>
 
-          <Card className="p-6 bg-muted/50 text-left space-y-3">
-            <h3 className="text-xl font-semibold mb-4">Event Details</h3>
-            <div className="flex items-start gap-3">
-              <Calendar className="h-5 w-5 text-primary mt-0.5" />
-              <div>
-                <p className="font-medium">Date</p>
-                <p className="text-muted-foreground">
-                  {format(parseISO(confirmedSignup.eventDate), "EEEE, MMMM dd, yyyy")}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Clock className="h-5 w-5 text-primary mt-0.5" />
-              <div>
-                <p className="font-medium">Time</p>
-                <p className="text-muted-foreground">{confirmedSignup.timeSlot}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-primary mt-0.5" />
-              <div>
-                <p className="font-medium">Location</p>
-                <p className="text-muted-foreground">
-                  {confirmedSignup.location}<br />
-                  {confirmedSignup.locationAddress}
-                </p>
-              </div>
-            </div>
-            {confirmedSignup.quantity > 1 && (
-              <div className="flex items-start gap-3">
-                <Users className="h-5 w-5 text-primary mt-0.5" />
-                <div>
-                  <p className="font-medium">Your Group ({confirmedSignup.quantity} people)</p>
-                  <ul className="text-muted-foreground list-disc list-inside">
-                    <li>{confirmedSignup.firstName} {confirmedSignup.lastName} (you)</li>
-                    {confirmedSignup.attendees.map((att, i) => (
-                      <li key={i}>{att.firstName} {att.lastName}</li>
-                    ))}
-                  </ul>
+          <div className="space-y-4">
+            {confirmedSignup.events.map((ev) => (
+              <Card key={ev.id} className="p-6 bg-muted/50 text-left space-y-3">
+                <h3 className="text-lg font-semibold mb-2">
+                  {ev.eventName || ev.location}
+                </h3>
+                <div className="flex items-start gap-3">
+                  <Calendar className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-medium">Date</p>
+                    <p className="text-muted-foreground">
+                      {format(parseISO(ev.eventDate), "EEEE, MMMM dd, yyyy")}
+                    </p>
+                  </div>
                 </div>
-              </div>
+                <div className="flex items-start gap-3">
+                  <Clock className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-medium">Time</p>
+                    <p className="text-muted-foreground">{ev.timeSlot}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-medium">Location</p>
+                    <p className="text-muted-foreground">
+                      {ev.location}<br />
+                      {ev.locationAddress}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-2">
+                  <Button onClick={() => handleAddToGoogleCalendarFor(ev)} size="sm">
+                    <Calendar className="h-4 w-4 mr-2" /> Google
+                  </Button>
+                  <Button onClick={() => handleAddToOutlookFor(ev)} size="sm" variant="secondary">
+                    <Calendar className="h-4 w-4 mr-2" /> Outlook
+                  </Button>
+                  <Button onClick={() => handleDownloadICSFor(ev)} size="sm" variant="outline">
+                    <Download className="h-4 w-4 mr-2" /> .ics
+                  </Button>
+                </div>
+                {ev.requires_payment && ev.ticket_purchase_url && (
+                  <div className="mt-3 p-3 border-2 border-primary rounded-lg bg-primary/5">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      This event requires a ticket purchase of ${ev.ticket_price} to confirm.
+                    </p>
+                    <Button
+                      className="w-full"
+                      size="sm"
+                      onClick={() => window.open(ev.ticket_purchase_url!, "_blank")}
+                    >
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Purchase Ticket (${ev.ticket_price})
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            ))}
+
+            {confirmedSignup.quantity > 1 && (
+              <Card className="p-4 bg-muted/30 text-left">
+                <div className="flex items-start gap-3">
+                  <Users className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-medium">Your Group ({confirmedSignup.quantity} people)</p>
+                    <ul className="text-muted-foreground list-disc list-inside">
+                      <li>{confirmedSignup.firstName} {confirmedSignup.lastName} (you)</li>
+                      {confirmedSignup.attendees.map((att, i) => (
+                        <li key={i}>{att.firstName} {att.lastName}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </Card>
             )}
-          </Card>
+          </div>
 
           <div className="bg-blue-50 dark:bg-blue-950 border-2 border-blue-200 dark:border-blue-800 p-4 rounded-lg">
             <p className="text-sm font-medium">
@@ -413,55 +448,8 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
             </p>
           </div>
 
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <Button 
-                onClick={handleAddToGoogleCalendar}
-                size="lg"
-                className="h-14 text-base"
-              >
-                <Calendar className="h-5 w-5 mr-2" />
-                Google Calendar
-              </Button>
-              
-              <Button 
-                onClick={handleAddToOutlook}
-                size="lg"
-                variant="secondary"
-                className="h-14 text-base"
-              >
-                <Calendar className="h-5 w-5 mr-2" />
-                Outlook
-              </Button>
-              
-              <Button 
-                onClick={handleDownloadICS}
-                size="lg"
-                variant="outline"
-                className="h-14 text-base"
-              >
-                <Download className="h-5 w-5 mr-2" />
-                Download .ics
-              </Button>
-            </div>
-            
-            {selectedEvent && (selectedEvent as any).requires_payment && (selectedEvent as any).ticket_purchase_url && (
-              <div className="mt-4 p-4 border-2 border-primary rounded-lg bg-primary/5">
-                <h4 className="font-semibold text-lg mb-2">Complete Your Registration</h4>
-                <p className="text-sm text-muted-foreground mb-4">
-                  This event requires a ticket purchase of ${(selectedEvent as any).ticket_price} to confirm your registration.
-                </p>
-                <Button
-                  className="w-full h-12"
-                  onClick={() => window.open((selectedEvent as any).ticket_purchase_url, '_blank')}
-                >
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Purchase Ticket (${(selectedEvent as any).ticket_price})
-                </Button>
-              </div>
-            )}
-            
-            <Button 
+          <div>
+            <Button
               onClick={handleSignUpAnother}
               variant="outline"
               size="lg"
