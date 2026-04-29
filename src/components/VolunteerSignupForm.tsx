@@ -5,13 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { CheckCircle2, Calendar, MapPin, Clock, Download, ExternalLink, Users } from "lucide-react";
@@ -36,7 +30,7 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const [selectedEventId, setSelectedEventId] = useState<string>("");
+  const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -44,16 +38,22 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
   const [additionalAttendees, setAdditionalAttendees] = useState<Attendee[]>([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedSignup, setConfirmedSignup] = useState<{
-    eventDate: string;
-    timeSlot: string;
-    location: string;
-    locationAddress: string;
     firstName: string;
     lastName: string;
     email: string;
     quantity: number;
     attendees: Attendee[];
-    eventName?: string | null;
+    events: Array<{
+      id: string;
+      eventDate: string;
+      timeSlot: string;
+      location: string;
+      locationAddress: string;
+      eventName?: string | null;
+      requires_payment?: boolean;
+      ticket_price?: number | null;
+      ticket_purchase_url?: string | null;
+    }>;
   } | null>(null);
 
   const { data: events } = useQuery({
@@ -104,7 +104,7 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
 
   const signupMutation = useMutation({
     mutationFn: async (signupData: {
-      event_id: string;
+      event_ids: string[];
       first_name: string;
       last_name: string;
       email: string;
@@ -112,89 +112,116 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
       comment?: string;
       attendees: Attendee[];
     }) => {
-      // Insert main signup
-      const { data: signup, error: signupError } = await supabase
-        .from("volunteer_signups")
-        .insert({
-          event_id: signupData.event_id,
-          first_name: signupData.first_name,
-          last_name: signupData.last_name,
-          email: signupData.email,
-          quantity: signupData.quantity,
-          comment: signupData.comment,
-        })
-        .select()
-        .single();
+      const successes: string[] = [];
+      const failures: { event_id: string; message: string }[] = [];
 
-      if (signupError) throw signupError;
+      for (const event_id of signupData.event_ids) {
+        try {
+          const { data: signup, error: signupError } = await supabase
+            .from("volunteer_signups")
+            .insert({
+              event_id,
+              first_name: signupData.first_name,
+              last_name: signupData.last_name,
+              email: signupData.email,
+              quantity: signupData.quantity,
+              comment: signupData.comment,
+            })
+            .select()
+            .single();
 
-      // Insert additional attendees if any
-      if (signupData.attendees.length > 0) {
-        const attendeesData = signupData.attendees.map(att => ({
-          signup_id: signup.id,
-          first_name: att.firstName,
-          last_name: att.lastName,
-        }));
+          if (signupError) throw signupError;
 
-        const { error: attendeesError } = await supabase
-          .from("volunteer_signup_attendees")
-          .insert(attendeesData);
+          if (signupData.attendees.length > 0) {
+            const attendeesData = signupData.attendees.map((att) => ({
+              signup_id: signup.id,
+              first_name: att.firstName,
+              last_name: att.lastName,
+            }));
 
-        if (attendeesError) throw attendeesError;
+            const { error: attendeesError } = await supabase
+              .from("volunteer_signup_attendees")
+              .insert(attendeesData);
+
+            if (attendeesError) throw attendeesError;
+          }
+
+          successes.push(event_id);
+        } catch (e: any) {
+          failures.push({ event_id, message: e?.message || "Unknown error" });
+        }
       }
 
-      return signup;
+      return { successes, failures };
     },
-    onSuccess: async () => {
-      const event = events?.find((e) => e.id === selectedEventId);
-      if (event) {
+    onSuccess: async ({ successes, failures }) => {
+      const confirmedEvents = (events || [])
+        .filter((e) => successes.includes(e.id))
+        .map((e) => ({
+          id: e.id,
+          eventDate: e.event_date,
+          timeSlot: e.time_slot,
+          location: e.location,
+          locationAddress: e.location_address,
+          eventName: e.event_name,
+          requires_payment: (e as any).requires_payment,
+          ticket_price: (e as any).ticket_price,
+          ticket_purchase_url: (e as any).ticket_purchase_url,
+        }));
+
+      if (confirmedEvents.length > 0) {
         setConfirmedSignup({
-          eventDate: event.event_date,
-          timeSlot: event.time_slot,
-          location: event.location,
-          locationAddress: event.location_address,
           firstName,
           lastName,
           email,
           quantity,
           attendees: additionalAttendees,
-          eventName: event.event_name,
+          events: confirmedEvents,
         });
         setShowConfirmation(true);
-        
-        // Trigger Zapier webhook for ticket events
-        if (event.requires_payment) {
-          const webhookUrl = localStorage.getItem("zapier_ticket_webhook_url");
-          if (webhookUrl) {
-            try {
-              await fetch(webhookUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                mode: "no-cors",
-                body: JSON.stringify({
-                  type: "ticket_purchase",
-                  event_name: event.event_name || event.location,
-                  event_date: event.event_date,
-                  event_time: event.time_slot,
-                  location: event.location,
-                  location_address: event.location_address,
-                  ticket_price: event.ticket_price,
-                  first_name: firstName,
-                  last_name: lastName,
-                  email: email,
-                  quantity: quantity,
-                  total_amount: (event.ticket_price || 0) * quantity,
-                  timestamp: new Date().toISOString(),
-                }),
-              });
-              console.log("Ticket webhook triggered successfully");
-            } catch (error) {
-              console.error("Failed to trigger ticket webhook:", error);
+
+        // Trigger Zapier webhook for any ticketed events
+        for (const ev of confirmedEvents) {
+          if (ev.requires_payment) {
+            const webhookUrl = localStorage.getItem("zapier_ticket_webhook_url");
+            if (webhookUrl) {
+              try {
+                await fetch(webhookUrl, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  mode: "no-cors",
+                  body: JSON.stringify({
+                    type: "ticket_purchase",
+                    event_name: ev.eventName || ev.location,
+                    event_date: ev.eventDate,
+                    event_time: ev.timeSlot,
+                    location: ev.location,
+                    location_address: ev.locationAddress,
+                    ticket_price: ev.ticket_price,
+                    first_name: firstName,
+                    last_name: lastName,
+                    email,
+                    quantity,
+                    total_amount: (ev.ticket_price || 0) * quantity,
+                    timestamp: new Date().toISOString(),
+                  }),
+                });
+              } catch (error) {
+                console.error("Failed to trigger ticket webhook:", error);
+              }
             }
           }
         }
       }
-      
+
+      if (failures.length > 0) {
+        toast({
+          title: `Signed up for ${successes.length} of ${successes.length + failures.length} dates`,
+          description: `${failures.length} date(s) could not be booked. They may be full.`,
+          variant: "destructive",
+        });
+      }
+
       queryClient.invalidateQueries({ queryKey: ["volunteer-events"] });
       queryClient.invalidateQueries({ queryKey: ["volunteer-events-available"] });
     },
@@ -234,10 +261,10 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedEventId || !firstName || !lastName || !email) {
+    if (selectedEventIds.length === 0 || !firstName || !lastName || !email) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields.",
+        description: "Please select at least one date and fill in all required fields.",
         variant: "destructive",
       });
       return;
@@ -257,7 +284,7 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
     }
 
     signupMutation.mutate({
-      event_id: selectedEventId,
+      event_ids: selectedEventIds,
       first_name: firstName,
       last_name: lastName,
       email: email,
@@ -266,59 +293,49 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
     });
   };
 
-  const selectedEvent = events?.find((e) => e.id === selectedEventId);
-  const availableSpots = selectedEvent ? selectedEvent.capacity - selectedEvent.slots_filled : 0;
+  const selectedEvents = events?.filter((e) => selectedEventIds.includes(e.id)) || [];
+  const minSpotsAcrossSelected = selectedEvents.length > 0
+    ? Math.min(...selectedEvents.map((e) => e.capacity - e.slots_filled))
+    : 999;
 
-  const handleAddToGoogleCalendar = () => {
-    if (!confirmedSignup) return;
-    
-    const url = generateGoogleCalendarUrl(
-      confirmedSignup.eventDate,
-      confirmedSignup.timeSlot,
-      confirmedSignup.location,
-      confirmedSignup.locationAddress
-    );
-    
-    window.open(url, '_blank');
+  const toggleEvent = (id: string, checked: boolean) => {
+    setSelectedEventIds((prev) => {
+      if (checked) return [...prev, id];
+      return prev.filter((x) => x !== id);
+    });
   };
 
-  const handleAddToOutlook = () => {
-    if (!confirmedSignup) return;
-    
-    const url = generateOutlookCalendarUrl(
-      confirmedSignup.eventDate,
-      confirmedSignup.timeSlot,
-      confirmedSignup.location,
-      confirmedSignup.locationAddress
+  const handleAddToGoogleCalendarFor = (ev: NonNullable<typeof confirmedSignup>["events"][number]) => {
+    window.open(
+      generateGoogleCalendarUrl(ev.eventDate, ev.timeSlot, ev.location, ev.locationAddress),
+      "_blank"
     );
-    
-    window.open(url, '_blank');
   };
 
-  const handleDownloadICS = () => {
+  const handleAddToOutlookFor = (ev: NonNullable<typeof confirmedSignup>["events"][number]) => {
+    window.open(
+      generateOutlookCalendarUrl(ev.eventDate, ev.timeSlot, ev.location, ev.locationAddress),
+      "_blank"
+    );
+  };
+
+  const handleDownloadICSFor = (ev: NonNullable<typeof confirmedSignup>["events"][number]) => {
     if (!confirmedSignup) return;
-    
-    const icsContent = generateCalendarFile(
-      confirmedSignup.eventDate,
-      confirmedSignup.timeSlot,
-      confirmedSignup.location,
-      confirmedSignup.locationAddress,
+    const ics = generateCalendarFile(
+      ev.eventDate,
+      ev.timeSlot,
+      ev.location,
+      ev.locationAddress,
       confirmedSignup.email,
       `${confirmedSignup.firstName} ${confirmedSignup.lastName}`
     );
-    
-    downloadCalendarFile(icsContent);
-    
-    toast({
-      title: "Calendar File Downloaded",
-      description: "Open the file to add this event to your calendar.",
-    });
+    downloadCalendarFile(ics);
   };
 
   const handleSignUpAnother = () => {
     setShowConfirmation(false);
     setConfirmedSignup(null);
-    setSelectedEventId("");
+    setSelectedEventIds([]);
     setFirstName("");
     setLastName("");
     setEmail("");
@@ -346,49 +363,84 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
             </p>
           </div>
 
-          <Card className="p-6 bg-muted/50 text-left space-y-3">
-            <h3 className="text-xl font-semibold mb-4">Event Details</h3>
-            <div className="flex items-start gap-3">
-              <Calendar className="h-5 w-5 text-primary mt-0.5" />
-              <div>
-                <p className="font-medium">Date</p>
-                <p className="text-muted-foreground">
-                  {format(parseISO(confirmedSignup.eventDate), "EEEE, MMMM dd, yyyy")}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Clock className="h-5 w-5 text-primary mt-0.5" />
-              <div>
-                <p className="font-medium">Time</p>
-                <p className="text-muted-foreground">{confirmedSignup.timeSlot}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-primary mt-0.5" />
-              <div>
-                <p className="font-medium">Location</p>
-                <p className="text-muted-foreground">
-                  {confirmedSignup.location}<br />
-                  {confirmedSignup.locationAddress}
-                </p>
-              </div>
-            </div>
-            {confirmedSignup.quantity > 1 && (
-              <div className="flex items-start gap-3">
-                <Users className="h-5 w-5 text-primary mt-0.5" />
-                <div>
-                  <p className="font-medium">Your Group ({confirmedSignup.quantity} people)</p>
-                  <ul className="text-muted-foreground list-disc list-inside">
-                    <li>{confirmedSignup.firstName} {confirmedSignup.lastName} (you)</li>
-                    {confirmedSignup.attendees.map((att, i) => (
-                      <li key={i}>{att.firstName} {att.lastName}</li>
-                    ))}
-                  </ul>
+          <div className="space-y-4">
+            {confirmedSignup.events.map((ev) => (
+              <Card key={ev.id} className="p-6 bg-muted/50 text-left space-y-3">
+                <h3 className="text-lg font-semibold mb-2">
+                  {ev.eventName || ev.location}
+                </h3>
+                <div className="flex items-start gap-3">
+                  <Calendar className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-medium">Date</p>
+                    <p className="text-muted-foreground">
+                      {format(parseISO(ev.eventDate), "EEEE, MMMM dd, yyyy")}
+                    </p>
+                  </div>
                 </div>
-              </div>
+                <div className="flex items-start gap-3">
+                  <Clock className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-medium">Time</p>
+                    <p className="text-muted-foreground">{ev.timeSlot}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-medium">Location</p>
+                    <p className="text-muted-foreground">
+                      {ev.location}<br />
+                      {ev.locationAddress}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-2">
+                  <Button onClick={() => handleAddToGoogleCalendarFor(ev)} size="sm">
+                    <Calendar className="h-4 w-4 mr-2" /> Google
+                  </Button>
+                  <Button onClick={() => handleAddToOutlookFor(ev)} size="sm" variant="secondary">
+                    <Calendar className="h-4 w-4 mr-2" /> Outlook
+                  </Button>
+                  <Button onClick={() => handleDownloadICSFor(ev)} size="sm" variant="outline">
+                    <Download className="h-4 w-4 mr-2" /> .ics
+                  </Button>
+                </div>
+                {ev.requires_payment && ev.ticket_purchase_url && (
+                  <div className="mt-3 p-3 border-2 border-primary rounded-lg bg-primary/5">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      This event requires a ticket purchase of ${ev.ticket_price} to confirm.
+                    </p>
+                    <Button
+                      className="w-full"
+                      size="sm"
+                      onClick={() => window.open(ev.ticket_purchase_url!, "_blank")}
+                    >
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Purchase Ticket (${ev.ticket_price})
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            ))}
+
+            {confirmedSignup.quantity > 1 && (
+              <Card className="p-4 bg-muted/30 text-left">
+                <div className="flex items-start gap-3">
+                  <Users className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-medium">Your Group ({confirmedSignup.quantity} people)</p>
+                    <ul className="text-muted-foreground list-disc list-inside">
+                      <li>{confirmedSignup.firstName} {confirmedSignup.lastName} (you)</li>
+                      {confirmedSignup.attendees.map((att, i) => (
+                        <li key={i}>{att.firstName} {att.lastName}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </Card>
             )}
-          </Card>
+          </div>
 
           <div className="bg-blue-50 dark:bg-blue-950 border-2 border-blue-200 dark:border-blue-800 p-4 rounded-lg">
             <p className="text-sm font-medium">
@@ -396,55 +448,8 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
             </p>
           </div>
 
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <Button 
-                onClick={handleAddToGoogleCalendar}
-                size="lg"
-                className="h-14 text-base"
-              >
-                <Calendar className="h-5 w-5 mr-2" />
-                Google Calendar
-              </Button>
-              
-              <Button 
-                onClick={handleAddToOutlook}
-                size="lg"
-                variant="secondary"
-                className="h-14 text-base"
-              >
-                <Calendar className="h-5 w-5 mr-2" />
-                Outlook
-              </Button>
-              
-              <Button 
-                onClick={handleDownloadICS}
-                size="lg"
-                variant="outline"
-                className="h-14 text-base"
-              >
-                <Download className="h-5 w-5 mr-2" />
-                Download .ics
-              </Button>
-            </div>
-            
-            {selectedEvent && (selectedEvent as any).requires_payment && (selectedEvent as any).ticket_purchase_url && (
-              <div className="mt-4 p-4 border-2 border-primary rounded-lg bg-primary/5">
-                <h4 className="font-semibold text-lg mb-2">Complete Your Registration</h4>
-                <p className="text-sm text-muted-foreground mb-4">
-                  This event requires a ticket purchase of ${(selectedEvent as any).ticket_price} to confirm your registration.
-                </p>
-                <Button
-                  className="w-full h-12"
-                  onClick={() => window.open((selectedEvent as any).ticket_purchase_url, '_blank')}
-                >
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Purchase Ticket (${(selectedEvent as any).ticket_price})
-                </Button>
-              </div>
-            )}
-            
-            <Button 
+          <div>
+            <Button
               onClick={handleSignUpAnother}
               variant="outline"
               size="lg"
@@ -480,40 +485,58 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
             </div>
             <Label htmlFor="event" className="text-xl font-semibold">Choose Your Date</Label>
           </div>
-          <Select value={selectedEventId} onValueChange={setSelectedEventId}>
-            <SelectTrigger id="event" className="min-h-14 h-auto text-lg py-3">
-              <SelectValue placeholder="Select a date and time" />
-            </SelectTrigger>
-            <SelectContent>
-              {events?.map((event) => {
+          <p className="text-sm text-muted-foreground">
+            Check one or more dates to sign up for all of them at once.
+          </p>
+          <div className="border rounded-lg max-h-96 overflow-y-auto divide-y">
+            {events && events.length > 0 ? (
+              events.map((event) => {
                 const spotsLeft = event.capacity - event.slots_filled;
+                const checked = selectedEventIds.includes(event.id);
+                const wouldExceed = quantity > spotsLeft;
                 return (
-                  <SelectItem key={event.id} value={event.id} className="text-base py-3">
-                    <div className="flex items-center gap-2">
-                      {getEventBadge(event)}
-                        <span>
-                          {format(parseISO(event.event_date), "MMM dd, yy")} – {getEventDisplayName(event)}
-                          {event.event_name && ` - ${event.time_slot}`}
-                          {` (${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'})`}
+                  <label
+                    key={event.id}
+                    htmlFor={`evt-${event.id}`}
+                    className={`flex items-start gap-3 p-3 cursor-pointer hover:bg-muted/50 ${
+                      checked ? "bg-primary/5" : ""
+                    } ${wouldExceed && !checked ? "opacity-50" : ""}`}
+                  >
+                    <Checkbox
+                      id={`evt-${event.id}`}
+                      checked={checked}
+                      disabled={wouldExceed && !checked}
+                      onCheckedChange={(c) => toggleEvent(event.id, c === true)}
+                      className="mt-1 h-5 w-5"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {getEventBadge(event)}
+                        <span className="font-medium">
+                          {format(parseISO(event.event_date), "EEE, MMM dd, yyyy")}
                         </span>
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {getEventDisplayName(event)} · {event.location} · {spotsLeft}{" "}
+                        {spotsLeft === 1 ? "spot" : "spots"} left
+                      </div>
                     </div>
-                  </SelectItem>
+                  </label>
                 );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Show selected event details */}
-        {selectedEvent && (
-          <div className="bg-green-50 dark:bg-green-950 border-2 border-green-200 dark:border-green-800 p-6 rounded-lg space-y-2">
-            <p className="text-lg"><strong>✓ You selected:</strong></p>
-            <p className="text-base"><strong>Date:</strong> {format(parseISO(selectedEvent.event_date), "MMMM dd, yyyy")}</p>
-            <p className="text-base"><strong>Time:</strong> {selectedEvent.time_slot}</p>
-            <p className="text-base"><strong>Location:</strong> {selectedEvent.location_address}</p>
-            <p className="text-base"><strong>Available Spots:</strong> {availableSpots} / {selectedEvent.capacity}</p>
+              })
+            ) : (
+              <div className="p-6 text-center text-muted-foreground">
+                No upcoming dates available.
+              </div>
+            )}
           </div>
-        )}
+          {selectedEventIds.length > 0 && (
+            <div className="bg-green-50 dark:bg-green-950 border-2 border-green-200 dark:border-green-800 p-3 rounded-lg text-sm">
+              <strong>{selectedEventIds.length}</strong> date
+              {selectedEventIds.length === 1 ? "" : "s"} selected
+            </div>
+          )}
+        </div>
 
         {/* Step 2: Personal Information */}
         <div className="space-y-4">
@@ -578,17 +601,18 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
                   key={num}
                   type="button"
                   variant={quantity === num ? "default" : "outline"}
-                  className={`h-12 w-12 text-lg ${quantity === num ? "" : ""}`}
+                  className="h-12 w-12 text-lg"
                   onClick={() => handleQuantityChange(num)}
-                  disabled={selectedEvent && num > availableSpots}
+                  disabled={selectedEvents.length > 0 && num > minSpotsAcrossSelected}
                 >
                   {num}
                 </Button>
               ))}
             </div>
-            {selectedEvent && availableSpots < 5 && (
+            {selectedEvents.length > 0 && minSpotsAcrossSelected < 5 && (
               <p className="text-sm text-muted-foreground">
-                Maximum {availableSpots} {availableSpots === 1 ? 'person' : 'people'} available for this slot
+                Maximum {minSpotsAcrossSelected}{" "}
+                {minSpotsAcrossSelected === 1 ? "person" : "people"} available across your selected dates
               </p>
             )}
           </div>
