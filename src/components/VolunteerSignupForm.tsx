@@ -5,13 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { CheckCircle2, Calendar, MapPin, Clock, Download, ExternalLink, Users } from "lucide-react";
@@ -36,7 +30,7 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const [selectedEventId, setSelectedEventId] = useState<string>("");
+  const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -44,16 +38,22 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
   const [additionalAttendees, setAdditionalAttendees] = useState<Attendee[]>([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedSignup, setConfirmedSignup] = useState<{
-    eventDate: string;
-    timeSlot: string;
-    location: string;
-    locationAddress: string;
     firstName: string;
     lastName: string;
     email: string;
     quantity: number;
     attendees: Attendee[];
-    eventName?: string | null;
+    events: Array<{
+      id: string;
+      eventDate: string;
+      timeSlot: string;
+      location: string;
+      locationAddress: string;
+      eventName?: string | null;
+      requires_payment?: boolean;
+      ticket_price?: number | null;
+      ticket_purchase_url?: string | null;
+    }>;
   } | null>(null);
 
   const { data: events } = useQuery({
@@ -104,7 +104,7 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
 
   const signupMutation = useMutation({
     mutationFn: async (signupData: {
-      event_id: string;
+      event_ids: string[];
       first_name: string;
       last_name: string;
       email: string;
@@ -112,89 +112,116 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
       comment?: string;
       attendees: Attendee[];
     }) => {
-      // Insert main signup
-      const { data: signup, error: signupError } = await supabase
-        .from("volunteer_signups")
-        .insert({
-          event_id: signupData.event_id,
-          first_name: signupData.first_name,
-          last_name: signupData.last_name,
-          email: signupData.email,
-          quantity: signupData.quantity,
-          comment: signupData.comment,
-        })
-        .select()
-        .single();
+      const successes: string[] = [];
+      const failures: { event_id: string; message: string }[] = [];
 
-      if (signupError) throw signupError;
+      for (const event_id of signupData.event_ids) {
+        try {
+          const { data: signup, error: signupError } = await supabase
+            .from("volunteer_signups")
+            .insert({
+              event_id,
+              first_name: signupData.first_name,
+              last_name: signupData.last_name,
+              email: signupData.email,
+              quantity: signupData.quantity,
+              comment: signupData.comment,
+            })
+            .select()
+            .single();
 
-      // Insert additional attendees if any
-      if (signupData.attendees.length > 0) {
-        const attendeesData = signupData.attendees.map(att => ({
-          signup_id: signup.id,
-          first_name: att.firstName,
-          last_name: att.lastName,
-        }));
+          if (signupError) throw signupError;
 
-        const { error: attendeesError } = await supabase
-          .from("volunteer_signup_attendees")
-          .insert(attendeesData);
+          if (signupData.attendees.length > 0) {
+            const attendeesData = signupData.attendees.map((att) => ({
+              signup_id: signup.id,
+              first_name: att.firstName,
+              last_name: att.lastName,
+            }));
 
-        if (attendeesError) throw attendeesError;
+            const { error: attendeesError } = await supabase
+              .from("volunteer_signup_attendees")
+              .insert(attendeesData);
+
+            if (attendeesError) throw attendeesError;
+          }
+
+          successes.push(event_id);
+        } catch (e: any) {
+          failures.push({ event_id, message: e?.message || "Unknown error" });
+        }
       }
 
-      return signup;
+      return { successes, failures };
     },
-    onSuccess: async () => {
-      const event = events?.find((e) => e.id === selectedEventId);
-      if (event) {
+    onSuccess: async ({ successes, failures }) => {
+      const confirmedEvents = (events || [])
+        .filter((e) => successes.includes(e.id))
+        .map((e) => ({
+          id: e.id,
+          eventDate: e.event_date,
+          timeSlot: e.time_slot,
+          location: e.location,
+          locationAddress: e.location_address,
+          eventName: e.event_name,
+          requires_payment: (e as any).requires_payment,
+          ticket_price: (e as any).ticket_price,
+          ticket_purchase_url: (e as any).ticket_purchase_url,
+        }));
+
+      if (confirmedEvents.length > 0) {
         setConfirmedSignup({
-          eventDate: event.event_date,
-          timeSlot: event.time_slot,
-          location: event.location,
-          locationAddress: event.location_address,
           firstName,
           lastName,
           email,
           quantity,
           attendees: additionalAttendees,
-          eventName: event.event_name,
+          events: confirmedEvents,
         });
         setShowConfirmation(true);
-        
-        // Trigger Zapier webhook for ticket events
-        if (event.requires_payment) {
-          const webhookUrl = localStorage.getItem("zapier_ticket_webhook_url");
-          if (webhookUrl) {
-            try {
-              await fetch(webhookUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                mode: "no-cors",
-                body: JSON.stringify({
-                  type: "ticket_purchase",
-                  event_name: event.event_name || event.location,
-                  event_date: event.event_date,
-                  event_time: event.time_slot,
-                  location: event.location,
-                  location_address: event.location_address,
-                  ticket_price: event.ticket_price,
-                  first_name: firstName,
-                  last_name: lastName,
-                  email: email,
-                  quantity: quantity,
-                  total_amount: (event.ticket_price || 0) * quantity,
-                  timestamp: new Date().toISOString(),
-                }),
-              });
-              console.log("Ticket webhook triggered successfully");
-            } catch (error) {
-              console.error("Failed to trigger ticket webhook:", error);
+
+        // Trigger Zapier webhook for any ticketed events
+        for (const ev of confirmedEvents) {
+          if (ev.requires_payment) {
+            const webhookUrl = localStorage.getItem("zapier_ticket_webhook_url");
+            if (webhookUrl) {
+              try {
+                await fetch(webhookUrl, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  mode: "no-cors",
+                  body: JSON.stringify({
+                    type: "ticket_purchase",
+                    event_name: ev.eventName || ev.location,
+                    event_date: ev.eventDate,
+                    event_time: ev.timeSlot,
+                    location: ev.location,
+                    location_address: ev.locationAddress,
+                    ticket_price: ev.ticket_price,
+                    first_name: firstName,
+                    last_name: lastName,
+                    email,
+                    quantity,
+                    total_amount: (ev.ticket_price || 0) * quantity,
+                    timestamp: new Date().toISOString(),
+                  }),
+                });
+              } catch (error) {
+                console.error("Failed to trigger ticket webhook:", error);
+              }
             }
           }
         }
       }
-      
+
+      if (failures.length > 0) {
+        toast({
+          title: `Signed up for ${successes.length} of ${successes.length + failures.length} dates`,
+          description: `${failures.length} date(s) could not be booked. They may be full.`,
+          variant: "destructive",
+        });
+      }
+
       queryClient.invalidateQueries({ queryKey: ["volunteer-events"] });
       queryClient.invalidateQueries({ queryKey: ["volunteer-events-available"] });
     },
@@ -234,10 +261,10 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedEventId || !firstName || !lastName || !email) {
+    if (selectedEventIds.length === 0 || !firstName || !lastName || !email) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields.",
+        description: "Please select at least one date and fill in all required fields.",
         variant: "destructive",
       });
       return;
@@ -257,7 +284,7 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
     }
 
     signupMutation.mutate({
-      event_id: selectedEventId,
+      event_ids: selectedEventIds,
       first_name: firstName,
       last_name: lastName,
       email: email,
@@ -266,59 +293,49 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
     });
   };
 
-  const selectedEvent = events?.find((e) => e.id === selectedEventId);
-  const availableSpots = selectedEvent ? selectedEvent.capacity - selectedEvent.slots_filled : 0;
+  const selectedEvents = events?.filter((e) => selectedEventIds.includes(e.id)) || [];
+  const minSpotsAcrossSelected = selectedEvents.length > 0
+    ? Math.min(...selectedEvents.map((e) => e.capacity - e.slots_filled))
+    : 999;
 
-  const handleAddToGoogleCalendar = () => {
-    if (!confirmedSignup) return;
-    
-    const url = generateGoogleCalendarUrl(
-      confirmedSignup.eventDate,
-      confirmedSignup.timeSlot,
-      confirmedSignup.location,
-      confirmedSignup.locationAddress
-    );
-    
-    window.open(url, '_blank');
+  const toggleEvent = (id: string, checked: boolean) => {
+    setSelectedEventIds((prev) => {
+      if (checked) return [...prev, id];
+      return prev.filter((x) => x !== id);
+    });
   };
 
-  const handleAddToOutlook = () => {
-    if (!confirmedSignup) return;
-    
-    const url = generateOutlookCalendarUrl(
-      confirmedSignup.eventDate,
-      confirmedSignup.timeSlot,
-      confirmedSignup.location,
-      confirmedSignup.locationAddress
+  const handleAddToGoogleCalendarFor = (ev: NonNullable<typeof confirmedSignup>["events"][number]) => {
+    window.open(
+      generateGoogleCalendarUrl(ev.eventDate, ev.timeSlot, ev.location, ev.locationAddress),
+      "_blank"
     );
-    
-    window.open(url, '_blank');
   };
 
-  const handleDownloadICS = () => {
+  const handleAddToOutlookFor = (ev: NonNullable<typeof confirmedSignup>["events"][number]) => {
+    window.open(
+      generateOutlookCalendarUrl(ev.eventDate, ev.timeSlot, ev.location, ev.locationAddress),
+      "_blank"
+    );
+  };
+
+  const handleDownloadICSFor = (ev: NonNullable<typeof confirmedSignup>["events"][number]) => {
     if (!confirmedSignup) return;
-    
-    const icsContent = generateCalendarFile(
-      confirmedSignup.eventDate,
-      confirmedSignup.timeSlot,
-      confirmedSignup.location,
-      confirmedSignup.locationAddress,
+    const ics = generateCalendarFile(
+      ev.eventDate,
+      ev.timeSlot,
+      ev.location,
+      ev.locationAddress,
       confirmedSignup.email,
       `${confirmedSignup.firstName} ${confirmedSignup.lastName}`
     );
-    
-    downloadCalendarFile(icsContent);
-    
-    toast({
-      title: "Calendar File Downloaded",
-      description: "Open the file to add this event to your calendar.",
-    });
+    downloadCalendarFile(ics);
   };
 
   const handleSignUpAnother = () => {
     setShowConfirmation(false);
     setConfirmedSignup(null);
-    setSelectedEventId("");
+    setSelectedEventIds([]);
     setFirstName("");
     setLastName("");
     setEmail("");
