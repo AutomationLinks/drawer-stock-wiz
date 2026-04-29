@@ -485,40 +485,58 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
             </div>
             <Label htmlFor="event" className="text-xl font-semibold">Choose Your Date</Label>
           </div>
-          <Select value={selectedEventId} onValueChange={setSelectedEventId}>
-            <SelectTrigger id="event" className="min-h-14 h-auto text-lg py-3">
-              <SelectValue placeholder="Select a date and time" />
-            </SelectTrigger>
-            <SelectContent>
-              {events?.map((event) => {
+          <p className="text-sm text-muted-foreground">
+            Check one or more dates to sign up for all of them at once.
+          </p>
+          <div className="border rounded-lg max-h-96 overflow-y-auto divide-y">
+            {events && events.length > 0 ? (
+              events.map((event) => {
                 const spotsLeft = event.capacity - event.slots_filled;
+                const checked = selectedEventIds.includes(event.id);
+                const wouldExceed = quantity > spotsLeft;
                 return (
-                  <SelectItem key={event.id} value={event.id} className="text-base py-3">
-                    <div className="flex items-center gap-2">
-                      {getEventBadge(event)}
-                        <span>
-                          {format(parseISO(event.event_date), "MMM dd, yy")} – {getEventDisplayName(event)}
-                          {event.event_name && ` - ${event.time_slot}`}
-                          {` (${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'})`}
+                  <label
+                    key={event.id}
+                    htmlFor={`evt-${event.id}`}
+                    className={`flex items-start gap-3 p-3 cursor-pointer hover:bg-muted/50 ${
+                      checked ? "bg-primary/5" : ""
+                    } ${wouldExceed && !checked ? "opacity-50" : ""}`}
+                  >
+                    <Checkbox
+                      id={`evt-${event.id}`}
+                      checked={checked}
+                      disabled={wouldExceed && !checked}
+                      onCheckedChange={(c) => toggleEvent(event.id, c === true)}
+                      className="mt-1 h-5 w-5"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {getEventBadge(event)}
+                        <span className="font-medium">
+                          {format(parseISO(event.event_date), "EEE, MMM dd, yyyy")}
                         </span>
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {getEventDisplayName(event)} · {event.location} · {spotsLeft}{" "}
+                        {spotsLeft === 1 ? "spot" : "spots"} left
+                      </div>
                     </div>
-                  </SelectItem>
+                  </label>
                 );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Show selected event details */}
-        {selectedEvent && (
-          <div className="bg-green-50 dark:bg-green-950 border-2 border-green-200 dark:border-green-800 p-6 rounded-lg space-y-2">
-            <p className="text-lg"><strong>✓ You selected:</strong></p>
-            <p className="text-base"><strong>Date:</strong> {format(parseISO(selectedEvent.event_date), "MMMM dd, yyyy")}</p>
-            <p className="text-base"><strong>Time:</strong> {selectedEvent.time_slot}</p>
-            <p className="text-base"><strong>Location:</strong> {selectedEvent.location_address}</p>
-            <p className="text-base"><strong>Available Spots:</strong> {availableSpots} / {selectedEvent.capacity}</p>
+              })
+            ) : (
+              <div className="p-6 text-center text-muted-foreground">
+                No upcoming dates available.
+              </div>
+            )}
           </div>
-        )}
+          {selectedEventIds.length > 0 && (
+            <div className="bg-green-50 dark:bg-green-950 border-2 border-green-200 dark:border-green-800 p-3 rounded-lg text-sm">
+              <strong>{selectedEventIds.length}</strong> date
+              {selectedEventIds.length === 1 ? "" : "s"} selected
+            </div>
+          )}
+        </div>
 
         {/* Step 2: Personal Information */}
         <div className="space-y-4">
@@ -583,17 +601,18 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
                   key={num}
                   type="button"
                   variant={quantity === num ? "default" : "outline"}
-                  className={`h-12 w-12 text-lg ${quantity === num ? "" : ""}`}
+                  className="h-12 w-12 text-lg"
                   onClick={() => handleQuantityChange(num)}
-                  disabled={selectedEvent && num > availableSpots}
+                  disabled={selectedEvents.length > 0 && num > minSpotsAcrossSelected}
                 >
                   {num}
                 </Button>
               ))}
             </div>
-            {selectedEvent && availableSpots < 5 && (
+            {selectedEvents.length > 0 && minSpotsAcrossSelected < 5 && (
               <p className="text-sm text-muted-foreground">
-                Maximum {availableSpots} {availableSpots === 1 ? 'person' : 'people'} available for this slot
+                Maximum {minSpotsAcrossSelected}{" "}
+                {minSpotsAcrossSelected === 1 ? "person" : "people"} available across your selected dates
               </p>
             )}
           </div>
