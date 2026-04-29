@@ -1,51 +1,44 @@
+# Plan: Multi-Date Volunteer Signup
 
+## Confirmation: Lovable, not GoHighLevel
 
-# Plan: Fix Missing Bombas Pairs / Total Pairs Values in Invoice Detail
+The "Drawer Knobs" volunteer signup form is built into this Lovable app (`src/components/VolunteerSignupForm.tsx`, used on `/signup`, `/embed/signup`, `VolunteerEvents`, `Events`, etc.). It writes directly to the `volunteer_events` and `volunteer_signups` tables in our backend. **This is fully a Lovable feature** — no GoHighLevel involvement. We can absolutely add multi-date selection.
 
-## Problem
+## Answer to the client
 
-In the invoice detail dialog, the "Total Pairs:" and "Bombas Pairs:" labels appear but the numeric values do not render visibly next to them. The `Bombas` column added to the `InvoicesTable` and the `InvoiceTemplate` print view appear to be working, but the dialog summary is broken.
+Today the form only allows one date per submission. We can update it so a volunteer fills out their name/email/group size once, then ticks every date they want to attend and submits a single time. Below is how we'd build it.
 
-## Root Cause
+## What changes
 
-In `src/components/InvoiceDetailDialog.tsx` (lines 244–266), the totals block uses `flex justify-between` directly on a parent `<div className="border-t pt-4">` that does **not** have `flex` itself — each row inside is a `flex justify-between`, which is fine. However, the values use `item.quantity` which from the items query comes back as numeric, but when summed via `reduce` with `(item.quantity || 0)`, numeric `0` is truthy-falsy correct.
+Replace the single "Choose Your Date" dropdown (Step 1) with a multi-select list of upcoming events. Everything else (name, email, group size, attendee names) stays the same and applies to **every** selected date.
 
-The likely real cause: `item.quantity` is returned from Supabase as a **string** (since the column is `numeric`), so `sum + "25"` produces string concatenation like `"02525..."`. The list above renders fine because it just prints `{item.quantity}`. The reduce produces a long string that may overflow off-screen to the right — explaining why nothing visible appears next to the label inside the dialog width.
+### UI
 
-Same issue exists in `InvoicesTable.tsx` (lines 145–153) and `InvoiceTemplate.tsx` totals reduce.
+- Step 1 becomes a scrollable checkbox list of available events (same data already loaded), each row showing the date, time, location, badge (Regular / Special / Ticket), and spots remaining.
+- A small summary line: "X dates selected".
+- Validation: at least 1 date required; group size cannot exceed the smallest "spots remaining" across selected dates.
+- Ticket-required events: only allow selecting **one** ticket event at a time (since each requires a separate purchase) — or hide the multi-select for ticket events and keep single-select. Recommend: exclude ticket events from multi-select; they remain single-signup only.
 
-## Fix
+### Submission logic (`signupMutation` in `VolunteerSignupForm.tsx`)
 
-Coerce `item.quantity` to a number in every `reduce` accumulator across the three files:
+- Loop the selected event IDs and insert one `volunteer_signups` row per date (same first/last/email/quantity/comment).
+- For each signup, also insert the same `volunteer_signup_attendees` rows.
+- Run inserts sequentially; if one fails, show which date failed and which succeeded.
+- Existing DB trigger `update_event_slots` already increments `slots_filled` per insert — no DB changes needed.
+- Existing trigger `notify_zapier_volunteer` will fire one Zapier + one confirmation email per signup, which is what we want (one calendar invite per date).
 
-### 1. `src/components/InvoiceDetailDialog.tsx`
-Wrap quantity with `Number(...)`:
-- `Total Pairs` reducer: `sum + Number(item.quantity || 0)`
-- `Bombas Pairs` reducer: `sum + (isBombas ? Number(item.quantity || 0) : 0)`
+### Confirmation screen
 
-### 2. `src/components/InvoicesTable.tsx`
-Same `Number()` coercion on `totalPairs` and `bombasPairs` reducers (lines 145–153).
+- Show a list of all confirmed dates instead of a single event block.
+- "Add to Google Calendar / Outlook / .ics" buttons render once per confirmed date (or a single .ics file containing all events — simpler: one button per date, grouped).
 
-### 3. `src/components/InvoiceTemplate.tsx`
-The IIFE on lines around `totalPairs`/`bombasPairs` already has a subtle bug — `Number(...) || 0` outside the parens means `||` applies to the entire `sum + Number(...)`. Restructure as:
-```ts
-const qty = Number(isInvoice ? it.quantity : it.quantity_ordered) || 0;
-return sum + qty;
-```
+## Files touched
 
-## Verification
+- `src/components/VolunteerSignupForm.tsx` — swap Select for checkbox list, change state from `selectedEventId: string` to `selectedEventIds: string[]`, update validation, mutation, and confirmation view.
+- `src/utils/generateCalendarFile.ts` — optionally add a helper to bundle multiple VEVENTs into one `.ics` (nice-to-have).
 
-After the fix, open any invoice (e.g. INV-000031 from the screenshot) and confirm:
-- "Total Pairs:" shows `290` (25+25+25+25+45+45+100)
-- "Bombas Pairs:" shows `200` (only Bombas-named items)
-- Invoices list table `Pairs` and `Bombas` columns show correct integers
-- Printed/PDF invoice shows the same numbers in its summary box
+## What is NOT touched
 
-## Files Touched
-
-- `src/components/InvoiceDetailDialog.tsx`
-- `src/components/InvoicesTable.tsx`
-- `src/components/InvoiceTemplate.tsx`
-
-No backend, schema, or other component changes.
-
+- Database schema, RLS, triggers
+- Edge functions (`send-volunteer-confirmation`, `notify-zapier-volunteer`) — they already handle one signup at a time, which is exactly what we'll send them, once per date
+- `VolunteerSignups.tsx` admin page, cancel flow, invoices, Bombas totals, donation counter, or any unrelated feature
