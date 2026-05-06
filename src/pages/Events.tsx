@@ -18,7 +18,7 @@ const Events = () => {
         .from("volunteer_events")
         .select("*")
         .eq("event_type", "event")
-        .gte("event_date", "2025-10-01")
+        .gte("event_date", new Date().toISOString().split("T")[0])
         .order("event_date", { ascending: true });
 
       if (error) throw error;

@@ -21,7 +21,7 @@ export const VolunteerSchedule = () => {
       const { data, error } = await supabase
         .from("volunteer_events")
         .select("*")
-        .gte("event_date", "2025-10-01")
+        .gte("event_date", new Date().toISOString().split("T")[0])
         .neq("location", "Eagan")
         .order("event_date", { ascending: true });
 

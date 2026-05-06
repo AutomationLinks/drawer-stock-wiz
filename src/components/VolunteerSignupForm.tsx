@@ -62,7 +62,7 @@ export const VolunteerSignupForm = ({ onSuccess, showOnlyEventType, filterType =
       let query = supabase
         .from("volunteer_events")
         .select("*")
-        .gte("event_date", "2025-10-01");
+        .gte("event_date", new Date().toISOString().split("T")[0]);
       
       // Legacy prop support
       if (showOnlyEventType) {
